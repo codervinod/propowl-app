@@ -26,22 +26,8 @@ export async function fetchPropertyData(
     const smartDefaults = generateSmartDefaults(address);
     return smartDefaults;
 
-    // Commented out Google Places API call for now
-    /*
-    const googleData = await fetchFromGooglePlaces(placeId);
-    console.log("Google Places API result:", googleData);
-
-    if (googleData.propertyType && !googleData.error) {
-      console.log("Using Google Places data");
-      return googleData;
-    }
-
-    // Fallback to smart defaults based on address patterns
-    console.log("Using smart defaults for address:", address);
-    const smartDefaults = generateSmartDefaults(address);
-    console.log("Generated smart defaults:", smartDefaults);
-    return smartDefaults;
-    */
+    // TODO: Re-enable Google Places API once permissions are configured
+    // For now, use smart defaults directly
 
   } catch (error) {
     console.error("Error fetching property data:", error);
