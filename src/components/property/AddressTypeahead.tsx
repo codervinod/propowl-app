@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
@@ -35,92 +35,7 @@ export default function AddressTypeahead({
   const [inputValue, setInputValue] = useState(defaultValue);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Only run on client side to avoid hydration issues
-    if (typeof window === 'undefined' || !inputRef.current) return;
-
-    // Check if Google Maps is already loaded
-    if (typeof google !== "undefined" && google.maps && google.maps.places) {
-      initializeAutocomplete();
-      setIsLoaded(true);
-      return;
-    }
-
-    // Load Google Maps API if not already loaded
-    if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        initializeAutocomplete();
-        setIsLoaded(true);
-      };
-      script.onerror = () => {
-        console.error("Failed to load Google Maps API");
-      };
-      document.head.appendChild(script);
-    } else {
-      // Script exists but might not be loaded yet
-      const checkGoogleMaps = () => {
-        if (typeof google !== "undefined" && google.maps && google.maps.places) {
-          initializeAutocomplete();
-          setIsLoaded(true);
-        } else {
-          setTimeout(checkGoogleMaps, 100);
-        }
-      };
-      checkGoogleMaps();
-    }
-  }, []);
-
-  const initializeAutocomplete = () => {
-    if (!inputRef.current) return;
-
-    // Initialize Google Places Autocomplete
-    autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-      types: ["address"],
-      componentRestrictions: { country: "us" }, // Restrict to US addresses
-      fields: ["address_components", "formatted_address", "place_id"],
-    });
-
-    // Listen for place selection
-    autocompleteRef.current.addListener("place_changed", handlePlaceSelect);
-  };
-
-  const handlePlaceSelect = () => {
-    if (!autocompleteRef.current) return;
-
-    setIsLoading(true);
-    const place = autocompleteRef.current.getPlace();
-
-    if (!place.address_components || !place.formatted_address) {
-      console.error("Invalid place selected");
-      setIsLoading(false);
-      return;
-    }
-
-    // Parse address components
-    const addressComponents = parseAddressComponents(place.address_components);
-
-    if (addressComponents) {
-      const fullAddress: AddressComponents = {
-        ...addressComponents,
-        placeId: place.place_id || "",
-        formattedAddress: place.formatted_address,
-      };
-
-      // Update input value
-      setInputValue(place.formatted_address);
-
-      // Notify parent component
-      onAddressSelect(fullAddress);
-    }
-
-    setIsLoading(false);
-  };
-
-  const parseAddressComponents = (components: google.maps.GeocoderAddressComponent[]): Omit<AddressComponents, 'placeId' | 'formattedAddress'> | null => {
+  const parseAddressComponents = useCallback((components: google.maps.GeocoderAddressComponent[]): Omit<AddressComponents, 'placeId' | 'formattedAddress'> | null => {
     let streetNumber = "";
     let route = "";
     let city = "";
@@ -158,7 +73,93 @@ export default function AddressTypeahead({
       state,
       zipCode,
     };
-  };
+  }, []);
+
+  const handlePlaceSelect = useCallback(() => {
+    if (!autocompleteRef.current) return;
+
+    setIsLoading(true);
+    const place = autocompleteRef.current.getPlace();
+
+    if (!place.address_components || !place.formatted_address) {
+      console.error("Invalid place selected");
+      setIsLoading(false);
+      return;
+    }
+
+    // Parse address components
+    const addressComponents = parseAddressComponents(place.address_components);
+
+    if (addressComponents) {
+      const fullAddress: AddressComponents = {
+        ...addressComponents,
+        placeId: place.place_id || "",
+        formattedAddress: place.formatted_address,
+      };
+
+      // Update input value
+      setInputValue(place.formatted_address);
+
+      // Notify parent component
+      onAddressSelect(fullAddress);
+    }
+
+    setIsLoading(false);
+  }, [onAddressSelect, parseAddressComponents]);
+
+  const initializeAutocomplete = useCallback(() => {
+    if (!inputRef.current) return;
+
+    // Initialize Google Places Autocomplete
+    autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+      types: ["address"],
+      componentRestrictions: { country: "us" }, // Restrict to US addresses
+      fields: ["address_components", "formatted_address", "place_id"],
+    });
+
+    // Listen for place selection
+    autocompleteRef.current.addListener("place_changed", handlePlaceSelect);
+  }, [handlePlaceSelect]);
+
+  useEffect(() => {
+    // Only run on client side to avoid hydration issues
+    if (typeof window === 'undefined' || !inputRef.current) return;
+
+    // Check if Google Maps is already loaded
+    if (typeof google !== "undefined" && google.maps && google.maps.places) {
+      initializeAutocomplete();
+      // Use setTimeout to avoid setState in effect warning
+      setTimeout(() => setIsLoaded(true), 0);
+      return;
+    }
+
+    // Load Google Maps API if not already loaded
+    if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        initializeAutocomplete();
+        setIsLoaded(true);
+      };
+      script.onerror = () => {
+        console.error("Failed to load Google Maps API");
+      };
+      document.head.appendChild(script);
+    } else {
+      // Script exists but might not be loaded yet
+      const checkGoogleMaps = () => {
+        if (typeof google !== "undefined" && google.maps && google.maps.places) {
+          initializeAutocomplete();
+          setIsLoaded(true);
+        } else {
+          setTimeout(checkGoogleMaps, 100);
+        }
+      };
+      checkGoogleMaps();
+    }
+  }, [initializeAutocomplete]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);

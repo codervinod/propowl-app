@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -13,10 +14,10 @@ export default function Home() {
           </div>
           <div className="flex gap-4">
             <Button variant="ghost" asChild>
-              <a href="/login">Log in</a>
+              <Link href="/login">Log in</Link>
             </Button>
             <Button asChild>
-              <a href="/signup">Get Started</a>
+              <Link href="/signup">Get Started</Link>
             </Button>
           </div>
         </nav>
@@ -34,7 +35,7 @@ export default function Home() {
           </p>
           <div className="flex gap-4 justify-center">
             <Button size="lg" asChild>
-              <a href="/signup">Start Free</a>
+              <Link href="/signup">Start Free</Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a href="#features">Learn More</a>
@@ -107,7 +108,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <Button size="lg" variant="secondary" asChild>
-                <a href="/signup">Get Started Free</a>
+                <Link href="/signup">Get Started Free</Link>
               </Button>
             </CardContent>
           </Card>

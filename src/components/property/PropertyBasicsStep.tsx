@@ -59,8 +59,8 @@ const propertyBasicsSchema = z.object({
 type PropertyBasicsData = z.infer<typeof propertyBasicsSchema>;
 
 interface PropertyBasicsStepProps {
-  data: any;
-  onUpdate: (data: any) => void;
+  data: Record<string, unknown>;
+  onUpdate: (data: Record<string, unknown>) => void;
   onNext: () => void;
 }
 

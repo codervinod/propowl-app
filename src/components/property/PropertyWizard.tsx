@@ -17,12 +17,16 @@ const WIZARD_STEPS = [
   { id: 7, title: "Review", description: "Confirm and save" },
 ];
 
+interface PropertyData {
+  [key: string]: unknown;
+}
+
 export default function PropertyWizard() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [propertyData, setPropertyData] = useState({});
+  const [propertyData, setPropertyData] = useState<PropertyData>({});
   const router = useRouter();
 
-  const updatePropertyData = (stepData: any) => {
+  const updatePropertyData = (stepData: PropertyData) => {
     setPropertyData(prev => ({ ...prev, ...stepData }));
   };
 
