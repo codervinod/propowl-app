@@ -63,23 +63,24 @@ export default function PropertyWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={goToDashboard}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-gray-600 hover:text-orange-500 hover:bg-orange-50"
             >
               <ChevronLeft className="h-4 w-4" />
               Back to Dashboard
             </Button>
-            <div className="flex items-center gap-2">
-              <Home className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-semibold text-gray-900">Add Property</h1>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">🦉</span>
+              <Home className="h-6 w-6 text-orange-500" />
+              <h1 className="text-2xl font-bold text-orange-500">Add Property</h1>
             </div>
           </div>
         </div>
@@ -87,38 +88,42 @@ export default function PropertyWizard() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-gray-900">
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-800">
               Step {currentStep} of {WIZARD_STEPS.length}
             </h2>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm font-semibold text-orange-500 bg-orange-100 px-3 py-1 rounded-full">
               {Math.round((currentStep / WIZARD_STEPS.length) * 100)}% complete
             </span>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
             <div
-              className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
+              className="bg-gradient-to-r from-orange-400 to-amber-400 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
               style={{ width: `${(currentStep / WIZARD_STEPS.length) * 100}%` }}
             />
           </div>
 
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between mt-6">
             {WIZARD_STEPS.map((step) => (
               <div key={step.id} className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                     step.id <= currentStep
-                      ? "bg-primary text-white"
-                      : "bg-gray-200 text-gray-500"
+                      ? "bg-gradient-to-br from-orange-400 to-amber-500 text-white shadow-md scale-105"
+                      : "bg-gray-300 text-gray-600"
                   }`}
                 >
                   {step.id}
                 </div>
-                <div className="text-center mt-2">
-                  <div className="text-xs font-medium text-gray-900">{step.title}</div>
-                  <div className="text-xs text-gray-500 hidden sm:block">{step.description}</div>
+                <div className="text-center mt-3">
+                  <div className={`text-xs font-medium ${step.id <= currentStep ? "text-orange-500" : "text-gray-600"}`}>
+                    {step.title}
+                  </div>
+                  <div className={`text-xs hidden sm:block ${step.id <= currentStep ? "text-gray-600" : "text-gray-500"}`}>
+                    {step.description}
+                  </div>
                 </div>
               </div>
             ))}
@@ -126,31 +131,34 @@ export default function PropertyWizard() {
         </div>
 
         {/* Current Step Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+        <Card className="border border-orange-200 shadow-lg bg-white">
+          <CardHeader className="bg-orange-50 border-b border-orange-200">
+            <CardTitle className="flex items-center gap-3">
+              <span className="bg-gradient-to-br from-orange-400 to-amber-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-sm">
                 {currentStep}
               </span>
-              {WIZARD_STEPS[currentStep - 1]?.title}
+              <span className="text-xl font-bold text-gray-800">
+                {WIZARD_STEPS[currentStep - 1]?.title}
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>{renderCurrentStep()}</CardContent>
+          <CardContent className="p-8">{renderCurrentStep()}</CardContent>
         </Card>
 
         {/* Navigation */}
-        <div className="flex justify-between mt-8">
+        <div className="flex justify-between mt-10">
           <Button
             variant="outline"
             onClick={prevStep}
             disabled={currentStep === 1}
+            className="border border-gray-300 text-gray-600 hover:bg-gray-50"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
           </Button>
 
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={goToDashboard}>
+          <div className="flex gap-4">
+            <Button variant="ghost" onClick={goToDashboard} className="text-gray-600 hover:bg-gray-100">
               Save & Exit
             </Button>
           </div>
