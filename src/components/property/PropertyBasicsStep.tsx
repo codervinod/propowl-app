@@ -56,11 +56,11 @@ const propertyBasicsSchema = z.object({
   landValue: z.number().min(0, "Land value must be positive"),
 });
 
-type PropertyBasicsData = z.infer<typeof propertyBasicsSchema>;
+export type PropertyBasicsData = z.infer<typeof propertyBasicsSchema>;
 
 interface PropertyBasicsStepProps {
-  data: Record<string, unknown>;
-  onUpdate: (data: Record<string, unknown>) => void;
+  data: Partial<PropertyBasicsData>;
+  onUpdate: (data: Partial<PropertyBasicsData>) => void;
   onNext: () => void;
 }
 

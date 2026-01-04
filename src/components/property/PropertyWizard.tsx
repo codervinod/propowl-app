@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Home } from "lucide-react";
-import PropertyBasicsStep from "./PropertyBasicsStep";
+import PropertyBasicsStep, { type PropertyBasicsData } from "./PropertyBasicsStep";
 
 const WIZARD_STEPS = [
   { id: 1, title: "Property Basics", description: "Address and purchase details" },
@@ -17,7 +17,7 @@ const WIZARD_STEPS = [
   { id: 7, title: "Review", description: "Confirm and save" },
 ];
 
-interface PropertyData {
+interface PropertyData extends Partial<PropertyBasicsData> {
   [key: string]: unknown;
 }
 
