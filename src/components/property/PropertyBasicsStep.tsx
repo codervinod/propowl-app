@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import AddressTypeahead, { AddressComponents } from "./AddressTypeahead";
+import { MonthPicker } from "@/components/ui/month-picker";
 
 // Simplified validation - only essential fields required, smart defaults for others
 const propertyBasicsSchema = z.object({
@@ -89,11 +90,19 @@ export default function PropertyBasicsStep({
       zipCode: data.zipCode || "",
       placeId: data.placeId || "",
       propertyType: data.propertyType || "single_family",
-      purchaseDate: data.purchaseDate || new Date().toISOString().slice(0, 7),
+      purchaseDate: data.purchaseDate || "", // Empty string to avoid hydration issues
       purchasePrice: data.purchasePrice || 0,
       landValue: data.landValue || 0,
     },
   });
+
+  // Set current month after hydration to avoid SSR mismatch
+  useEffect(() => {
+    if (!data.purchaseDate || data.purchaseDate === "") {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      form.setValue("purchaseDate", currentMonth);
+    }
+  }, [form, data.purchaseDate]);
 
   const purchasePrice = form.watch("purchasePrice");
 
@@ -156,7 +165,11 @@ export default function PropertyBasicsStep({
             <div className="space-y-4">
               <AddressTypeahead
                 onAddressSelect={handleAddressSelect}
-                defaultValue={`${form.getValues("street")} ${form.getValues("city")} ${form.getValues("state")} ${form.getValues("zipCode")}`.trim()}
+                defaultValue={
+                  form.getValues("street") || form.getValues("city")
+                    ? `${form.getValues("street")} ${form.getValues("city")} ${form.getValues("state")} ${form.getValues("zipCode")}`.trim()
+                    : ""
+                }
                 placeholder="Start typing a property address..."
               />
 
@@ -233,10 +246,11 @@ export default function PropertyBasicsStep({
                     </span>
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      type="month"
-                      {...field}
-                      max={new Date().toISOString().slice(0, 7)}
+                    <MonthPicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select purchase month"
+                      maxDate={new Date()}
                     />
                   </FormControl>
                   <FormDescription>

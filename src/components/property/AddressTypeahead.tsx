@@ -36,6 +36,9 @@ export default function AddressTypeahead({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Only run on client side to avoid hydration issues
+    if (typeof window === 'undefined' || !inputRef.current) return;
+
     // Check if Google Maps is already loaded
     if (typeof google !== "undefined" && google.maps && google.maps.places) {
       initializeAutocomplete();
