@@ -30,7 +30,7 @@ export default async function DashboardPage() {
             <span className="text-sm text-gray-700 font-medium">
               {user.firstName || user.emailAddresses[0]?.emailAddress}
             </span>
-            <UserButton afterSignOutUrl="/login" />
+            <UserButton />
           </div>
         </div>
       </header>
