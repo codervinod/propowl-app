@@ -28,14 +28,27 @@ export async function fetchPropertyData(
   address: AddressComponents
 ): Promise<PropertyDataResponse> {
   try {
-    // Try Google Places API first (most reliable)
+    // TODO: Temporarily skip Google Places API due to deprecation/permission issues
+    // Once Google API is properly configured, this can be re-enabled
+    const smartDefaults = generateSmartDefaults(address);
+    return smartDefaults;
+
+    // Commented out Google Places API call for now
+    /*
     const googleData = await fetchFromGooglePlaces(placeId);
-    if (googleData.propertyType) {
+    console.log("Google Places API result:", googleData);
+
+    if (googleData.propertyType && !googleData.error) {
+      console.log("Using Google Places data");
       return googleData;
     }
 
     // Fallback to smart defaults based on address patterns
-    return generateSmartDefaults(address);
+    console.log("Using smart defaults for address:", address);
+    const smartDefaults = generateSmartDefaults(address);
+    console.log("Generated smart defaults:", smartDefaults);
+    return smartDefaults;
+    */
 
   } catch (error) {
     console.error("Error fetching property data:", error);

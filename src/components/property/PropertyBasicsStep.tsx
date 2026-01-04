@@ -128,6 +128,7 @@ export default function PropertyBasicsStep({
     }
   };
 
+
   const handleAddressSelect = async (address: AddressComponents, propertyData?: PropertyDataResult) => {
     // First call is just address selection
     if (!propertyData) {
@@ -248,6 +249,7 @@ export default function PropertyBasicsStep({
           {propertyDataError && (
             <ErrorMessage message={propertyDataError} />
           )}
+
 
           {/* Property Details */}
           <div className="space-y-4">
