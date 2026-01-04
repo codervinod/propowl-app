@@ -14,12 +14,25 @@ export interface AddressComponents {
   formattedAddress: string;
 }
 
+export interface PropertyDataResult {
+  propertyType?: string;
+  estimatedValue?: number;
+  landValue?: number;
+  landValuePercentage?: number;
+  yearBuilt?: number;
+  squareFootage?: number;
+  confidence: "high" | "medium" | "low";
+  source: string;
+  error?: string;
+}
+
 interface AddressTypeaheadProps {
-  onAddressSelect: (address: AddressComponents) => void;
+  onAddressSelect: (address: AddressComponents, propertyData?: PropertyDataResult) => void;
   defaultValue?: string;
   label?: string;
   placeholder?: string;
   required?: boolean;
+  enablePropertyDataFetch?: boolean;
 }
 
 export default function AddressTypeahead({
@@ -28,12 +41,14 @@ export default function AddressTypeahead({
   label = "Property Address",
   placeholder = "Start typing an address...",
   required = true,
+  enablePropertyDataFetch = true,
 }: AddressTypeaheadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputValue, setInputValue] = useState(defaultValue);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingPropertyData, setIsFetchingPropertyData] = useState(false);
 
   const parseAddressComponents = useCallback((components: google.maps.GeocoderAddressComponent[]): Omit<AddressComponents, 'placeId' | 'formattedAddress'> | null => {
     let streetNumber = "";
@@ -75,7 +90,47 @@ export default function AddressTypeahead({
     };
   }, []);
 
-  const handlePlaceSelect = useCallback(() => {
+  const fetchPropertyData = useCallback(async (address: AddressComponents): Promise<PropertyDataResult | undefined> => {
+    if (!enablePropertyDataFetch) {
+      return undefined;
+    }
+
+    try {
+      setIsFetchingPropertyData(true);
+
+      const response = await fetch('/api/properties/fetch-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          placeId: address.placeId,
+          address,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        return result.data;
+      } else {
+        console.warn('Property data fetch unsuccessful:', result);
+        return undefined;
+      }
+
+    } catch (error) {
+      console.error('Failed to fetch property data:', error);
+      return undefined;
+    } finally {
+      setIsFetchingPropertyData(false);
+    }
+  }, [enablePropertyDataFetch]);
+
+  const handlePlaceSelect = useCallback(async () => {
     if (!autocompleteRef.current) return;
 
     setIsLoading(true);
@@ -87,25 +142,44 @@ export default function AddressTypeahead({
       return;
     }
 
-    // Parse address components
-    const addressComponents = parseAddressComponents(place.address_components);
+    try {
+      // Parse address components
+      const addressComponents = parseAddressComponents(place.address_components);
 
-    if (addressComponents) {
-      const fullAddress: AddressComponents = {
-        ...addressComponents,
-        placeId: place.place_id || "",
-        formattedAddress: place.formatted_address,
-      };
+      if (addressComponents) {
+        const fullAddress: AddressComponents = {
+          ...addressComponents,
+          placeId: place.place_id || "",
+          formattedAddress: place.formatted_address,
+        };
 
-      // Update input value
-      setInputValue(place.formatted_address);
+        // Update input value
+        setInputValue(place.formatted_address);
 
-      // Notify parent component
-      onAddressSelect(fullAddress);
+        // Fetch property data in background (don't block the UI)
+        const propertyDataPromise = fetchPropertyData(fullAddress);
+
+        // Notify parent component immediately with address
+        onAddressSelect(fullAddress);
+
+        // Then fetch property data and update when available
+        try {
+          const propertyData = await propertyDataPromise;
+          if (propertyData) {
+            // Notify parent again with property data
+            onAddressSelect(fullAddress, propertyData);
+          }
+        } catch (error) {
+          // Property data fetch failed, but address selection succeeded
+          console.warn("Property data fetch failed:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error in place selection:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
-  }, [onAddressSelect, parseAddressComponents]);
+  }, [onAddressSelect, parseAddressComponents, fetchPropertyData]);
 
   const initializeAutocomplete = useCallback(() => {
     if (!inputRef.current) return;
@@ -180,9 +254,9 @@ export default function AddressTypeahead({
           onChange={handleInputChange}
           disabled={!isLoaded}
           required={required}
-          className={isLoading ? "pr-10" : ""}
+          className={(isLoading || isFetchingPropertyData) ? "pr-10" : ""}
         />
-        {isLoading && (
+        {(isLoading || isFetchingPropertyData) && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
           </div>
@@ -190,6 +264,9 @@ export default function AddressTypeahead({
       </div>
       {!isLoaded && (
         <p className="text-sm text-gray-500">Loading address search...</p>
+      )}
+      {isFetchingPropertyData && (
+        <p className="text-sm text-blue-600 animate-pulse">🏠 Fetching property details...</p>
       )}
     </div>
   );

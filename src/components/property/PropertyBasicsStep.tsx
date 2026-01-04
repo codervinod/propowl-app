@@ -31,8 +31,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import AddressTypeahead, { AddressComponents } from "./AddressTypeahead";
+import AddressTypeahead, { AddressComponents, PropertyDataResult } from "./AddressTypeahead";
 import { MonthPicker } from "@/components/ui/month-picker";
+import { AutoFilledBadge, LoadingFieldIndicator, ErrorMessage } from "@/components/ui/field-status";
 
 // Simplified validation - only essential fields required, smart defaults for others
 const propertyBasicsSchema = z.object({
@@ -80,6 +81,9 @@ export default function PropertyBasicsStep({
   const [landValuePercentage, setLandValuePercentage] = useState([20]);
   const [addressSelected, setAddressSelected] = useState(false);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
+  const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
+  const [propertyDataError, setPropertyDataError] = useState<string | null>(null);
 
   const form = useForm<PropertyBasicsData>({
     resolver: zodResolver(propertyBasicsSchema),
@@ -124,22 +128,65 @@ export default function PropertyBasicsStep({
     }
   };
 
-  const handleAddressSelect = async (address: AddressComponents) => {
-    setIsAutoFilling(true);
-    setAddressSelected(true);
+  const handleAddressSelect = async (address: AddressComponents, propertyData?: PropertyDataResult) => {
+    // First call is just address selection
+    if (!propertyData) {
+      setAddressSelected(true);
+      setIsAutoFilling(true);
+      setPropertyDataError(null); // Clear any previous errors
 
-    // Update form with address components
-    form.setValue("street", address.street);
-    form.setValue("city", address.city);
-    form.setValue("state", address.state);
-    form.setValue("zipCode", address.zipCode);
-    form.setValue("placeId", address.placeId);
+      // Update form with address components
+      form.setValue("street", address.street);
+      form.setValue("city", address.city);
+      form.setValue("state", address.state);
+      form.setValue("zipCode", address.zipCode);
+      form.setValue("placeId", address.placeId);
 
-    // TODO: In Phase 2, we'll add property data fetching here
-    // For now, just show that auto-fill could happen
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      return;
+    }
 
-    setIsAutoFilling(false);
+    // Second call includes property data
+    try {
+      const newAutoFilledFields = new Set<string>();
+
+      // Auto-fill property type if available
+      if (propertyData.propertyType) {
+        form.setValue("propertyType", propertyData.propertyType as any);
+        newAutoFilledFields.add("propertyType");
+      }
+
+      // Auto-fill purchase price if estimated value is available
+      if (propertyData.estimatedValue && propertyData.estimatedValue > 0) {
+        form.setValue("purchasePrice", propertyData.estimatedValue);
+        newAutoFilledFields.add("purchasePrice");
+      }
+
+      // Auto-fill land value if available
+      if (propertyData.landValue && propertyData.landValue > 0) {
+        form.setValue("landValue", propertyData.landValue);
+        newAutoFilledFields.add("landValue");
+
+        // Update land percentage to match the calculated value
+        if (propertyData.landValuePercentage) {
+          setLandValuePercentage([propertyData.landValuePercentage]);
+        }
+      }
+
+      // Update auto-filled fields tracking
+      setAutoFilledFields(newAutoFilledFields);
+      setPropertyDataSource(propertyData.source);
+
+      // Check if there was an error in the property data
+      if (propertyData.error) {
+        setPropertyDataError(`Property data unavailable: ${propertyData.error}`);
+      }
+
+    } catch (error) {
+      console.error("Error processing property data:", error);
+      setPropertyDataError("Failed to process property data. You can continue with manual entry.");
+    } finally {
+      setIsAutoFilling(false);
+    }
   };
 
   const onSubmit = (formData: PropertyBasicsData) => {
@@ -197,6 +244,11 @@ export default function PropertyBasicsStep({
             </div>
           </div>
 
+          {/* Property Data Error */}
+          {propertyDataError && (
+            <ErrorMessage message={propertyDataError} />
+          )}
+
           {/* Property Details */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Property Details</h3>
@@ -208,9 +260,15 @@ export default function PropertyBasicsStep({
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     Property Type
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Smart Default
-                    </span>
+                    {isAutoFilling && autoFilledFields.has("propertyType") ? (
+                      <LoadingFieldIndicator />
+                    ) : autoFilledFields.has("propertyType") ? (
+                      <AutoFilledBadge source={propertyDataSource || undefined} />
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Smart Default
+                      </span>
+                    )}
                   </FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
@@ -227,7 +285,10 @@ export default function PropertyBasicsStep({
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Defaulted to Single Family Home - you can change this
+                    {autoFilledFields.has("propertyType")
+                      ? `Auto-filled based on ${propertyDataSource === "google_places" ? "Google Places data" : "smart analysis"} - you can change this`
+                      : "Defaulted to Single Family Home - you can change this"
+                    }
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -271,7 +332,15 @@ export default function PropertyBasicsStep({
               name="purchasePrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Purchase Price</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    Purchase Price
+                    {isAutoFilling && autoFilledFields.has("purchasePrice") && (
+                      <LoadingFieldIndicator />
+                    )}
+                    {autoFilledFields.has("purchasePrice") && !isAutoFilling && (
+                      <AutoFilledBadge source={propertyDataSource || undefined} />
+                    )}
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
@@ -285,7 +354,10 @@ export default function PropertyBasicsStep({
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Total purchase price including closing costs
+                    {autoFilledFields.has("purchasePrice")
+                      ? `Estimated value from ${propertyDataSource === "google_places" ? "property data" : "market analysis"} - please adjust if needed`
+                      : "Total purchase price including closing costs"
+                    }
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -299,9 +371,15 @@ export default function PropertyBasicsStep({
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     Land Value
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Auto-Calculated
-                    </span>
+                    {isAutoFilling && autoFilledFields.has("landValue") ? (
+                      <LoadingFieldIndicator />
+                    ) : autoFilledFields.has("landValue") ? (
+                      <AutoFilledBadge source={propertyDataSource || undefined} />
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Auto-Calculated
+                      </span>
+                    )}
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-4 w-4 text-gray-400" />
