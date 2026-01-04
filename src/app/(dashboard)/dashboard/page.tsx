@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const user = await currentUser();
@@ -50,7 +51,9 @@ export default async function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">Add Your First Property</Button>
+              <Link href="/properties/add">
+                <Button className="w-full">Add Your First Property</Button>
+              </Link>
             </CardContent>
           </Card>
 
