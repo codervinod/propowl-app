@@ -1,0 +1,76 @@
+name: Smoke Tests on Staging
+
+on:
+  # Trigger after successful deployment to staging
+  deployment_status:
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL to test"
+        required: false
+        default: "https://staging.propowl.ai"
+
+env:
+  STAGING_URL: https://staging.propowl.ai
+
+jobs:
+  smoke-test:
+    name: Run Smoke Tests
+    runs-on: ubuntu-latest
+    # Only run on successful staging deployments
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Preview' &&
+       contains(github.event.deployment_status.target_url, 'staging'))
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Determine test URL
+        id: url
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "test_url=${{ github.event.inputs.url }}" >> $GITHUB_OUTPUT
+          else
+            echo "test_url=${{ github.event.deployment_status.target_url }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run smoke tests
+        run: npm run test:smoke
+        env:
+          BASE_URL: ${{ steps.url.outputs.test_url }}
+          CI: true
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-report
+          path: playwright-report/
+          retention-days: 3
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Smoke tests failed on staging deployment!"
+          echo "## Smoke Test Failure" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.url.outputs.test_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the test artifacts for details." >> $GITHUB_STEP_SUMMARY
