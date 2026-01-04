@@ -10,6 +10,7 @@ const fetchDataSchema = z.object({
     city: z.string().min(1),
     state: z.string().length(2),
     zipCode: z.string().min(5),
+    placeId: z.string().min(1),
     formattedAddress: z.string().min(1),
   }),
 });
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid request data",
-          details: validationResult.error.errors
+          details: validationResult.error.format()
         },
         { status: 400 }
       );

@@ -12,13 +12,6 @@ export interface PropertyDataResponse {
   error?: string;
 }
 
-interface GooglePlaceDetails {
-  types?: string[];
-  price_level?: number;
-  rating?: number;
-  website?: string;
-  formatted_phone_number?: string;
-}
 
 /**
  * Main function to fetch property data from multiple sources
@@ -58,101 +51,9 @@ export async function fetchPropertyData(
   }
 }
 
-/**
- * Fetch property data from Google Places API
- */
-async function fetchFromGooglePlaces(placeId: string): Promise<PropertyDataResponse> {
-  try {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      throw new Error("Google Maps API key not configured");
-    }
+// Note: Google Places API fetching temporarily disabled due to permission issues
+// Will be re-enabled once API access is properly configured
 
-    // Fetch place details from Google Places API
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=types,price_level,rating,website,formatted_phone_number&key=${apiKey}`,
-      {
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Google Places API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.status !== 'OK' || !data.result) {
-      throw new Error(`Google Places API status: ${data.status}`);
-    }
-
-    return parseGooglePlaceDetails(data.result);
-
-  } catch (error) {
-    console.error("Google Places API fetch failed:", error);
-    return {
-      confidence: "low",
-      source: "google_places_failed",
-      error: error instanceof Error ? error.message : "Unknown error"
-    };
-  }
-}
-
-/**
- * Parse Google Places details to extract property information
- */
-function parseGooglePlaceDetails(placeDetails: GooglePlaceDetails): PropertyDataResponse {
-  const types = placeDetails.types || [];
-
-  // Map Google Places types to our property types
-  let propertyType: string | undefined;
-  let confidence: "high" | "medium" | "low" = "medium";
-
-  // Check for specific property type indicators
-  if (types.includes("real_estate_agency") || types.includes("premise")) {
-    // This might not be a residential property
-    confidence = "low";
-  } else if (types.includes("establishment") && types.includes("point_of_interest")) {
-    // Likely a commercial or mixed-use property
-    propertyType = "apartment"; // Default to apartment for multi-unit
-    confidence = "medium";
-  } else if (types.includes("subpremise")) {
-    // Indicates a unit within a larger building (condo/apartment)
-    propertyType = "condo";
-    confidence = "high";
-  } else {
-    // Default assumption for residential addresses
-    propertyType = "single_family";
-    confidence = "medium";
-  }
-
-  // Estimate property value based on area (very rough)
-  let estimatedValue: number | undefined;
-  let landValue: number | undefined;
-  let landValuePercentage: number | undefined;
-
-  if (propertyType === "single_family") {
-    // Conservative estimate - user can adjust
-    estimatedValue = 350000; // National median-ish
-    landValuePercentage = 20;
-    landValue = Math.round(estimatedValue * 0.20);
-  } else if (propertyType === "condo") {
-    estimatedValue = 280000;
-    landValuePercentage = 15; // Lower for condos
-    landValue = Math.round(estimatedValue * 0.15);
-  }
-
-  return {
-    propertyType,
-    estimatedValue,
-    landValue,
-    landValuePercentage,
-    confidence,
-    source: "google_places",
-  };
-}
 
 /**
  * Generate smart defaults based on address patterns and location

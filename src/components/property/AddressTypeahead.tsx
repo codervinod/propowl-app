@@ -44,7 +44,7 @@ export default function AddressTypeahead({
   enablePropertyDataFetch = true,
 }: AddressTypeaheadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null); // Will be PlaceAutocompleteElement
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputValue, setInputValue] = useState(defaultValue);
   const [isLoading, setIsLoading] = useState(false);
@@ -181,77 +181,6 @@ export default function AddressTypeahead({
     }
   }, [onAddressSelect, parseAddressComponents, fetchPropertyData]);
 
-  // Handler for the new Places API
-  const handlePlaceSelectNew = useCallback(async (place: any) => {
-    setIsLoading(true);
-
-    if (!place.addressComponents || !place.formattedAddress) {
-      console.error("Invalid place selected from new API");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Convert new API address format to old format for compatibility
-      const addressComponents = place.addressComponents.map((component: any) => ({
-        long_name: component.longText,
-        short_name: component.shortText,
-        types: component.types
-      }));
-
-      const parsedComponents = parseAddressComponents(addressComponents);
-
-      if (parsedComponents) {
-        const fullAddress: AddressComponents = {
-          ...parsedComponents,
-          placeId: place.id || "",
-          formattedAddress: place.formattedAddress,
-        };
-
-        // Update input value (we need to update the autocomplete element)
-        if (autocompleteRef.current) {
-          autocompleteRef.current.value = place.formattedAddress;
-        }
-        setInputValue(place.formattedAddress);
-
-        // Fetch property data in background
-        const propertyDataPromise = fetchPropertyData(fullAddress);
-
-        // Notify parent component immediately with address
-        onAddressSelect(fullAddress);
-
-        // Then fetch property data and update when available
-        try {
-          const propertyData = await propertyDataPromise;
-          if (propertyData) {
-            onAddressSelect(fullAddress, propertyData);
-          }
-        } catch (error) {
-          console.warn("Property data fetch failed:", error);
-        }
-      }
-    } catch (error) {
-      console.error("Error in new API place selection:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onAddressSelect, parseAddressComponents, fetchPropertyData]);
-
-  const initializeAutocomplete = useCallback(() => {
-    if (!inputRef.current) return;
-
-    // Temporarily use old API until new API permissions are configured
-    // The new Places API requires additional billing/permissions setup
-    console.log("Using legacy Google Places API (with deprecation warnings)");
-    initializeOldAutocomplete();
-
-    // TODO: Re-enable new API once permissions are configured
-    // try {
-    //   // New Places API implementation would go here
-    // } catch (error) {
-    //   initializeOldAutocomplete();
-    // }
-  }, [handlePlaceSelect]);
 
   // Fallback to old API
   const initializeOldAutocomplete = useCallback(() => {
@@ -267,6 +196,22 @@ export default function AddressTypeahead({
     autocompleteRef.current = autocomplete;
     autocomplete.addListener("place_changed", handlePlaceSelect);
   }, [handlePlaceSelect]);
+
+  const initializeAutocomplete = useCallback(() => {
+    if (!inputRef.current) return;
+
+    // Temporarily use old API until new API permissions are configured
+    // The new Places API requires additional billing/permissions setup
+    console.log("Using legacy Google Places API (with deprecation warnings)");
+    initializeOldAutocomplete();
+
+    // TODO: Re-enable new API once permissions are configured
+    // try {
+    //   // New Places API implementation would go here
+    // } catch (error) {
+    //   initializeOldAutocomplete();
+    // }
+  }, [initializeOldAutocomplete]);
 
   useEffect(() => {
     // Only run on client side to avoid hydration issues

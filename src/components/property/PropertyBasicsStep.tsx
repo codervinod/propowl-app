@@ -152,7 +152,7 @@ export default function PropertyBasicsStep({
 
       // Auto-fill property type if available
       if (propertyData.propertyType) {
-        form.setValue("propertyType", propertyData.propertyType as any);
+        form.setValue("propertyType", propertyData.propertyType as "single_family" | "condo" | "townhouse" | "multi_family" | "apartment");
         newAutoFilledFields.add("propertyType");
       }
 
