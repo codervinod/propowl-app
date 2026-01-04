@@ -24,31 +24,35 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ChevronRight, Calculator, Info } from "lucide-react";
+import { ChevronRight, Calculator, Info, MapPin } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import AddressTypeahead, { AddressComponents } from "./AddressTypeahead";
 
+// Simplified validation - only essential fields required, smart defaults for others
 const propertyBasicsSchema = z.object({
-  street: z.string().min(1, "Street address is required"),
+  // Address (auto-populated from typeahead)
+  street: z.string().min(1, "Address is required"),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(2, "State is required").max(2, "Use 2-letter state code"),
-  zipCode: z.string().min(5, "ZIP code must be at least 5 digits"),
+  state: z.string().min(2).max(2),
+  zipCode: z.string().min(5),
+  placeId: z.string().optional(),
+
+  // Smart defaults with user override (handled in defaultValues)
   propertyType: z.enum([
     "single_family",
     "condo",
     "townhouse",
     "multi_family",
     "apartment",
-  ]).refine((val) => !!val, {
-    message: "Please select a property type",
-  }),
+  ]),
+  purchasePrice: z.number().min(1, "Purchase price is required"),
   purchaseDate: z.string().min(1, "Purchase date is required"),
-  purchasePrice: z.number().min(1, "Purchase price must be greater than 0"),
-  landValue: z.number().min(1, "Land value must be greater than 0"),
+  landValue: z.number().min(0, "Land value must be positive"),
 });
 
 type PropertyBasicsData = z.infer<typeof propertyBasicsSchema>;
@@ -73,6 +77,8 @@ export default function PropertyBasicsStep({
   onNext,
 }: PropertyBasicsStepProps) {
   const [landValuePercentage, setLandValuePercentage] = useState([20]);
+  const [addressSelected, setAddressSelected] = useState(false);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
 
   const form = useForm<PropertyBasicsData>({
     resolver: zodResolver(propertyBasicsSchema),
@@ -81,8 +87,9 @@ export default function PropertyBasicsStep({
       city: data.city || "",
       state: data.state || "",
       zipCode: data.zipCode || "",
-      propertyType: data.propertyType || undefined,
-      purchaseDate: data.purchaseDate || "",
+      placeId: data.placeId || "",
+      propertyType: data.propertyType || "single_family",
+      purchaseDate: data.purchaseDate || new Date().toISOString().slice(0, 7),
       purchasePrice: data.purchasePrice || 0,
       landValue: data.landValue || 0,
     },
@@ -108,6 +115,24 @@ export default function PropertyBasicsStep({
     }
   };
 
+  const handleAddressSelect = async (address: AddressComponents) => {
+    setIsAutoFilling(true);
+    setAddressSelected(true);
+
+    // Update form with address components
+    form.setValue("street", address.street);
+    form.setValue("city", address.city);
+    form.setValue("state", address.state);
+    form.setValue("zipCode", address.zipCode);
+    form.setValue("placeId", address.placeId);
+
+    // TODO: In Phase 2, we'll add property data fetching here
+    // For now, just show that auto-fill could happen
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+
+    setIsAutoFilling(false);
+  };
+
   const onSubmit = (formData: PropertyBasicsData) => {
     onUpdate(formData);
     onNext();
@@ -119,64 +144,43 @@ export default function PropertyBasicsStep({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Property Address */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Property Address</h3>
-
-            <FormField
-              control={form.control}
-              name="street"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Street Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123 Main Street" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-medium text-gray-900">Property Address</h3>
+              {isAutoFilling && (
+                <span className="text-sm text-blue-600 animate-pulse">Auto-filling...</span>
               )}
-            />
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Austin" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            {/* Address Typeahead */}
+            <div className="space-y-4">
+              <AddressTypeahead
+                onAddressSelect={handleAddressSelect}
+                defaultValue={`${form.getValues("street")} ${form.getValues("city")} ${form.getValues("state")} ${form.getValues("zipCode")}`.trim()}
+                placeholder="Start typing a property address..."
               />
 
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="TX" maxLength={2} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="zipCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ZIP Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="78701" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Address Fields (auto-populated, read-only for display) */}
+              {addressSelected && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border">
+                  <div>
+                    <Label className="text-sm text-gray-600">Street</Label>
+                    <p className="font-medium">{form.watch("street")}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">City</Label>
+                    <p className="font-medium">{form.watch("city")}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">State</Label>
+                    <p className="font-medium">{form.watch("state")}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">ZIP Code</Label>
+                    <p className="font-medium">{form.watch("zipCode")}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -189,7 +193,12 @@ export default function PropertyBasicsStep({
               name="propertyType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Property Type</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    Property Type
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Smart Default
+                    </span>
+                  </FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -204,6 +213,9 @@ export default function PropertyBasicsStep({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormDescription>
+                    Defaulted to Single Family Home - you can change this
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -214,7 +226,12 @@ export default function PropertyBasicsStep({
               name="purchaseDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Purchase Date</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    Purchase Date
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Smart Default
+                    </span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="month"
@@ -223,7 +240,7 @@ export default function PropertyBasicsStep({
                     />
                   </FormControl>
                   <FormDescription>
-                    Month and year when you purchased the property
+                    Defaulted to current month - adjust if needed
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -268,6 +285,9 @@ export default function PropertyBasicsStep({
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     Land Value
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Auto-Calculated
+                    </span>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-4 w-4 text-gray-400" />
