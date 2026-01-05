@@ -6,16 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Home } from "lucide-react";
 import PropertyBasicsStep, { type PropertyBasicsData } from "./PropertyBasicsStep";
-import MortgageStep, { type MortgageData } from "./MortgageStep";
 import PropertySummaryStep from "./PropertySummaryStep";
 
 const WIZARD_STEPS = [
   { id: 1, title: "Property Basics", description: "Address and purchase details" },
-  { id: 2, title: "Financing", description: "Mortgage information" },
-  { id: 3, title: "Review & Save", description: "Complete property setup" },
+  { id: 2, title: "Review & Save", description: "Complete property setup" },
 ];
 
-interface PropertyData extends Partial<PropertyBasicsData>, Partial<MortgageData> {
+interface PropertyData extends Partial<PropertyBasicsData> {
   [key: string]: unknown;
 }
 
@@ -82,15 +80,6 @@ export default function PropertyWizard() {
           />
         );
       case 2:
-        return (
-          <MortgageStep
-            data={propertyData}
-            onUpdate={updatePropertyData}
-            onNext={nextStep}
-            onBack={prevStep}
-          />
-        );
-      case 3:
         return (
           <PropertySummaryStep
             data={propertyData}

@@ -17,11 +17,6 @@ const createPropertySchema = z.object({
   purchaseDate: z.string().min(1, "Purchase date is required"),
   purchasePrice: z.number().min(1, "Purchase price must be positive"),
   landValue: z.number().min(0, "Land value must be non-negative"),
-
-  // Mortgage info (optional for property setup)
-  hasMortgage: z.enum(["yes", "no"]),
-  lenderName: z.string().optional(),
-  originalLoanAmount: z.number().optional(),
 });
 
 // POST /api/properties - Create new property
@@ -81,7 +76,7 @@ export async function POST(request: NextRequest) {
       purchasePrice: propertyData.purchasePrice.toString(),
       landValue: propertyData.landValue.toString(),
       managementType: "self_managed", // Default for now
-      wizardStep: 3, // Completed the 3-step wizard
+      wizardStep: 2, // Completed the 2-step wizard
       wizardComplete: true,
     }).returning();
 
