@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { propertyId, taxYear, incomes, expenses: expenseList, grossRent, otherIncome } = validationResult.data;
+    const { propertyId, taxYear, incomes, expenses: expenseList, grossRent } = validationResult.data;
 
     // Verify user owns the property
     const propertyCheck = await db

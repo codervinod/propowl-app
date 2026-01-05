@@ -22,7 +22,15 @@ export default async function DashboardPage() {
   }
 
   // Fetch user's properties
-  let userProperties: any[] = [];
+  let userProperties: Array<{
+    id: string;
+    street: string;
+    city: string;
+    state: string;
+    propertyType: string;
+    purchasePrice: string;
+    landValue: string;
+  }> = [];
   try {
     const results = await db
       .select()

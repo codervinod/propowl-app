@@ -26,10 +26,7 @@ import {
 } from "@/components/ui/card";
 import { ChevronRight, ChevronLeft, Building2, Calculator, Info } from "lucide-react";
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 // Property-level mortgage information (static data only)
@@ -37,13 +34,6 @@ const mortgageSchema = z.object({
   hasMortgage: z.enum(["yes", "no"]),
   lenderName: z.string().optional(),
   originalLoanAmount: z.number().min(0, "Loan amount must be positive").optional(),
-}).refine((data) => {
-  // No required fields for mortgage details in property setup
-  // Annual interest will be entered in the tax year wizard
-  return true;
-}, {
-  message: "Invalid mortgage information",
-  path: ["hasMortgage"],
 });
 
 export type MortgageData = z.infer<typeof mortgageSchema>;

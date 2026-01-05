@@ -176,7 +176,7 @@ export default function PropertySummaryStep({
       {/* Next Steps Information */}
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
-          <h3 className="font-semibold text-blue-900 mb-2">What's Next?</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">What&apos;s Next?</h3>
           <div className="text-sm text-blue-800 space-y-1">
             <p>✓ Your property is now set up in PropOwl</p>
             <p>→ Next: Add tax data for 2024 to generate your Schedule E</p>

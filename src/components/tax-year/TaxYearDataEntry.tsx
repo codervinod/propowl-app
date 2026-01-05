@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -37,7 +36,6 @@ import {
   DollarSign,
   Plus,
   Trash2,
-  Receipt,
   FileText,
   Save,
   Loader2,
@@ -114,8 +112,6 @@ const OTHER_EXPENSE_CATEGORIES = [
   { value: "other", label: "Other", scheduleE: "Line 19" },
 ];
 
-// For backward compatibility - map MANDATORY_EXPENSE_TYPES to old format
-const MANDATORY_EXPENSES = MANDATORY_EXPENSE_TYPES;
 
 // For optional expenses dropdown - exclude mandatory categories
 const OPTIONAL_EXPENSE_CATEGORIES = OTHER_EXPENSE_CATEGORIES;
@@ -199,7 +195,13 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
 
             // Load income data - use new structured data if available
             if (result.data.incomes && result.data.incomes.length > 0) {
-              const loadedIncomes: IncomeEntry[] = result.data.incomes.map((income: any) => ({
+              const loadedIncomes: IncomeEntry[] = result.data.incomes.map((income: {
+                id: string;
+                type: 'rental' | 'other';
+                amount: number;
+                frequency: string;
+                description: string;
+              }) => ({
                 id: income.id,
                 type: income.type,
                 amount: income.amount,
@@ -220,7 +222,15 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
 
             // Load expense data with preserved frequency
             const expenses = result.data.expenses || [];
-            const allExpenses: ExpenseEntry[] = expenses.map((expense: any) => ({
+            const allExpenses: ExpenseEntry[] = expenses.map((expense: {
+              id: string;
+              category: string;
+              amount: number;
+              frequency: string;
+              description: string;
+              vendor: string;
+              date: string;
+            }) => ({
               id: expense.id,
               category: expense.category,
               amount: expense.amount,
@@ -369,7 +379,7 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
     }
   };
 
-  const handleUpdateMandatoryExpenseForm = (category: string, field: string, value: any) => {
+  const handleUpdateMandatoryExpenseForm = (category: string, field: string, value: string | number) => {
     setNewMandatoryExpenses(prev => ({
       ...prev,
       [category]: {
