@@ -42,49 +42,25 @@ export const expenseCategoryEnum = pgEnum("expense_category", [
   "other", // Line 19
 ]);
 
-// NextAuth.js tables
+export const frequencyEnum = pgEnum("frequency", [
+  "one_time",
+  "monthly",
+  "quarterly",
+  "annual"
+]);
+
+// Users table (Clerk integration)
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
+  clerkId: text("clerk_id").notNull().unique(), // Clerk user ID
   name: text("name"),
   email: text("email").notNull().unique(),
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
-  password: text("password"), // For credentials provider
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const accounts = pgTable("accounts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  provider: text("provider").notNull(),
-  providerAccountId: text("provider_account_id").notNull(),
-  refresh_token: text("refresh_token"),
-  access_token: text("access_token"),
-  expires_at: integer("expires_at"),
-  token_type: text("token_type"),
-  scope: text("scope"),
-  id_token: text("id_token"),
-  session_state: text("session_state"),
-});
-
-export const sessions = pgTable("sessions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  sessionToken: text("session_token").notNull().unique(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
-
-export const verificationTokens = pgTable("verification_tokens", {
-  identifier: text("identifier").notNull(),
-  token: text("token").notNull().unique(),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
 
 // PropOwl domain tables
 export const properties = pgTable("properties", {
@@ -137,6 +113,31 @@ export const mortgages = pgTable("mortgages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const incomeTypeEnum = pgEnum("income_type", [
+  "rental",
+  "other"
+]);
+
+export const incomeEntries = pgTable("income_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id, { onDelete: "cascade" }),
+
+  taxYear: integer("tax_year").notNull(),
+  type: incomeTypeEnum("type").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  frequency: frequencyEnum("frequency").notNull().default("annual"),
+  description: text("description"),
+
+  // Order preservation
+  sortOrder: integer("sort_order").default(0).notNull(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Keep old table for backward compatibility during migration
 export const rentalIncome = pgTable("rental_income", {
   id: uuid("id").primaryKey().defaultRandom(),
   propertyId: uuid("property_id")
@@ -169,9 +170,13 @@ export const expenses = pgTable("expenses", {
   date: date("date").notNull(),
   category: expenseCategoryEnum("category").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  frequency: frequencyEnum("frequency").notNull().default("one_time"),
   description: text("description"),
   vendor: text("vendor"),
   receiptUrl: text("receipt_url"),
+
+  // Order preservation
+  sortOrder: integer("sort_order").default(0).notNull(),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -199,6 +204,8 @@ export type Property = typeof properties.$inferSelect;
 export type NewProperty = typeof properties.$inferInsert;
 export type Mortgage = typeof mortgages.$inferSelect;
 export type NewMortgage = typeof mortgages.$inferInsert;
+export type IncomeEntry = typeof incomeEntries.$inferSelect;
+export type NewIncomeEntry = typeof incomeEntries.$inferInsert;
 export type RentalIncome = typeof rentalIncome.$inferSelect;
 export type NewRentalIncome = typeof rentalIncome.$inferInsert;
 export type Expense = typeof expenses.$inferSelect;

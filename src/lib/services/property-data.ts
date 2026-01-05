@@ -1,0 +1,115 @@
+import { AddressComponents } from "@/components/property/AddressTypeahead";
+
+export interface PropertyDataResponse {
+  propertyType?: string;
+  estimatedValue?: number;
+  landValue?: number;
+  landValuePercentage?: number;
+  yearBuilt?: number;
+  squareFootage?: number;
+  confidence: "high" | "medium" | "low";
+  source: string;
+  error?: string;
+}
+
+
+/**
+ * Main function to fetch property data from multiple sources
+ */
+export async function fetchPropertyData(
+  placeId: string,
+  address: AddressComponents
+): Promise<PropertyDataResponse> {
+  try {
+    // TODO: Temporarily skip Google Places API due to deprecation/permission issues
+    // Once Google API is properly configured, this can be re-enabled
+    const smartDefaults = generateSmartDefaults(address);
+    return smartDefaults;
+
+    // TODO: Re-enable Google Places API once permissions are configured
+    // For now, use smart defaults directly
+
+  } catch (error) {
+    console.error("Error fetching property data:", error);
+
+    // Always return smart defaults as final fallback
+    return generateSmartDefaults(address);
+  }
+}
+
+// Note: Google Places API fetching temporarily disabled due to permission issues
+// Will be re-enabled once API access is properly configured
+
+
+/**
+ * Generate smart defaults based on address patterns and location
+ */
+function generateSmartDefaults(address: AddressComponents): PropertyDataResponse {
+  // Analyze address for patterns
+  const street = address.street.toLowerCase();
+  const city = address.city.toLowerCase();
+
+  let propertyType = "single_family"; // Safe default
+  let estimatedValue = 300000; // Conservative national average
+  let landValuePercentage = 20;
+
+  // Look for condo/apartment indicators in address
+  if (
+    street.includes("apt") ||
+    street.includes("unit") ||
+    street.includes("#") ||
+    /\d+[a-z]$/i.test(address.street) // Ends with number+letter (e.g., "123A")
+  ) {
+    propertyType = "condo";
+    landValuePercentage = 15;
+  }
+
+  // Look for townhouse indicators
+  if (street.includes("townhouse") || street.includes("townhome")) {
+    propertyType = "townhouse";
+    landValuePercentage = 18;
+  }
+
+  // Adjust estimates based on known high-cost areas (rough heuristics)
+  const highCostCities = [
+    "san francisco", "palo alto", "mountain view", "cupertino",
+    "new york", "manhattan", "brooklyn", "queens",
+    "los angeles", "beverly hills", "santa monica",
+    "seattle", "bellevue", "redmond",
+    "boston", "cambridge", "somerville",
+    "washington", "alexandria", "arlington"
+  ];
+
+  const isHighCostArea = highCostCities.some(hcCity =>
+    city.includes(hcCity) || hcCity.includes(city)
+  );
+
+  if (isHighCostArea) {
+    estimatedValue = propertyType === "single_family" ? 800000 : 600000;
+  }
+
+  const landValue = Math.round(estimatedValue * (landValuePercentage / 100));
+
+  return {
+    propertyType,
+    estimatedValue,
+    landValue,
+    landValuePercentage,
+    confidence: "medium",
+    source: "smart_defaults",
+  };
+}
+
+/**
+ * Utility function to validate if a property type is valid
+ */
+export function isValidPropertyType(type: string): boolean {
+  const validTypes = [
+    "single_family",
+    "condo",
+    "townhouse",
+    "multi_family",
+    "apartment"
+  ];
+  return validTypes.includes(type);
+}

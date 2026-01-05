@@ -1,0 +1,411 @@
+/**
+ * PDF generation utilities for Schedule E using @react-pdf/renderer
+ * Creates IRS-compliant Schedule E forms for tax filing
+ */
+
+import { createElement } from "react";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Font,
+} from "@react-pdf/renderer";
+import {
+  ScheduleEData,
+  ScheduleESummary,
+} from "./types";
+import { formatTaxAmount } from "./calculations";
+
+// Register fonts for better PDF appearance
+// Font.register({
+//   family: 'Helvetica',
+//   src: 'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2'
+// });
+
+/**
+ * PDF styles for Schedule E forms
+ */
+const styles = StyleSheet.create({
+  page: {
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    paddingTop: 30,
+    paddingBottom: 60,
+    paddingHorizontal: 35,
+    backgroundColor: "#ffffff",
+  },
+  header: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  formTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  propertyHeader: {
+    fontSize: 11,
+    fontWeight: "bold",
+    marginTop: 15,
+    marginBottom: 10,
+    backgroundColor: "#f0f0f0",
+    padding: 5,
+  },
+  row: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#000000",
+    minHeight: 20,
+    alignItems: "center",
+  },
+  lineNumber: {
+    width: 30,
+    paddingLeft: 5,
+    fontWeight: "bold",
+  },
+  description: {
+    flex: 1,
+    paddingLeft: 10,
+  },
+  amount: {
+    width: 80,
+    textAlign: "right",
+    paddingRight: 5,
+  },
+  totalRow: {
+    flexDirection: "row",
+    borderTopWidth: 2,
+    borderTopColor: "#000000",
+    minHeight: 25,
+    alignItems: "center",
+    marginTop: 5,
+    fontWeight: "bold",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 30,
+    left: 35,
+    right: 35,
+    textAlign: "center",
+    fontSize: 8,
+    color: "#666666",
+  },
+  summaryTable: {
+    marginTop: 20,
+    border: 1,
+    borderColor: "#000000",
+  },
+  summaryHeader: {
+    flexDirection: "row",
+    backgroundColor: "#f0f0f0",
+    borderBottomWidth: 1,
+    borderBottomColor: "#000000",
+    padding: 5,
+    fontWeight: "bold",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#cccccc",
+    padding: 5,
+  },
+  summaryCell: {
+    flex: 1,
+    textAlign: "center",
+  },
+});
+
+/**
+ * Generate PDF document for a single property Schedule E
+ */
+export function createPropertyScheduleEPDF(data: ScheduleEData) {
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Form Header */}
+        <View style={styles.header}>
+          <Text>SCHEDULE E</Text>
+          <Text>(Form 1040)</Text>
+        </View>
+
+        <View style={styles.formTitle}>
+          <Text>Supplemental Income and Loss</Text>
+          <Text>Tax Year {data.taxYear}</Text>
+        </View>
+
+        {/* Property Information */}
+        <View style={styles.propertyHeader}>
+          <Text>
+            Property A: {data.property.address.street}, {data.property.address.city}, {data.property.address.state} {data.property.address.zipCode}
+          </Text>
+        </View>
+
+        {/* Income Section */}
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>3</Text>
+          <Text style={styles.description}>Rents received</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.income.rentalIncome)}</Text>
+        </View>
+
+        {/* Expenses Section */}
+        <View style={[styles.row, { marginTop: 15 }]}>
+          <Text style={styles.lineNumber}>5</Text>
+          <Text style={styles.description}>Advertising</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.advertising)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>6</Text>
+          <Text style={styles.description}>Auto and travel</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.autoAndTravel)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>7</Text>
+          <Text style={styles.description}>Cleaning and maintenance</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.cleaningAndMaintenance)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>8</Text>
+          <Text style={styles.description}>Commissions</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.commissions)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>9</Text>
+          <Text style={styles.description}>Insurance</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.insurance)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>10</Text>
+          <Text style={styles.description}>Legal and other professional fees</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.legal)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>11</Text>
+          <Text style={styles.description}>Management fees</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.managementFees)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>12</Text>
+          <Text style={styles.description}>Mortgage interest paid to banks, etc.</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.mortgageInterest)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>13</Text>
+          <Text style={styles.description}>Other interest</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.otherInterest)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>14</Text>
+          <Text style={styles.description}>Repairs</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.repairs)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>15</Text>
+          <Text style={styles.description}>Supplies</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.supplies)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>16</Text>
+          <Text style={styles.description}>Taxes</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.taxes)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>17</Text>
+          <Text style={styles.description}>Utilities</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.utilities)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>18</Text>
+          <Text style={styles.description}>Depreciation expense</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.depreciation)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.lineNumber}>19</Text>
+          <Text style={styles.description}>Other</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.expenses.other)}</Text>
+        </View>
+
+        {/* Totals */}
+        <View style={styles.totalRow}>
+          <Text style={styles.lineNumber}>20</Text>
+          <Text style={styles.description}>Total expenses</Text>
+          <Text style={styles.amount}>{formatTaxAmount(data.totals.totalExpenses)}</Text>
+        </View>
+
+        <View style={[styles.totalRow, { borderTopWidth: 1 }]}>
+          <Text style={styles.lineNumber}>21</Text>
+          <Text style={styles.description}>
+            Income or (loss) from rental real estate activities
+          </Text>
+          <Text style={styles.amount}>
+            {data.totals.netIncome < 0 ? `(${formatTaxAmount(Math.abs(data.totals.netIncome))})` : formatTaxAmount(data.totals.netIncome)}
+          </Text>
+        </View>
+
+        {/* Depreciation Details */}
+        {data.depreciation && (
+          <View style={{ marginTop: 30 }}>
+            <Text style={styles.propertyHeader}>Depreciation Details</Text>
+            <View style={styles.row}>
+              <Text style={styles.description}>Depreciable Basis:</Text>
+              <Text style={styles.amount}>{formatTaxAmount(data.depreciation.depreciableBasis)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.description}>Month Placed in Service:</Text>
+              <Text style={styles.amount}>{data.depreciation.monthPlacedInService}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.description}>Current Year Depreciation:</Text>
+              <Text style={styles.amount}>{formatTaxAmount(data.depreciation.currentYearDepreciation)}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Footer */}
+        <Text style={styles.footer}>
+          Generated by PropOwl - The wise way to manage rentals
+        </Text>
+      </Page>
+    </Document>
+  );
+}
+
+/**
+ * Generate PDF document for multiple properties Schedule E summary
+ */
+export function createScheduleESummaryPDF(summary: ScheduleESummary) {
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Form Header */}
+        <View style={styles.header}>
+          <Text>SCHEDULE E SUMMARY</Text>
+          <Text>(Form 1040)</Text>
+        </View>
+
+        <View style={styles.formTitle}>
+          <Text>Supplemental Income and Loss - Multi-Property Summary</Text>
+          <Text>Tax Year {summary.taxYear}</Text>
+        </View>
+
+        {/* Summary Table */}
+        <View style={styles.summaryTable}>
+          <View style={styles.summaryHeader}>
+            <Text style={styles.summaryCell}>Property</Text>
+            <Text style={styles.summaryCell}>Gross Income</Text>
+            <Text style={styles.summaryCell}>Expenses</Text>
+            <Text style={styles.summaryCell}>Depreciation</Text>
+            <Text style={styles.summaryCell}>Net Income</Text>
+          </View>
+
+          {summary.properties.map((property, index) => (
+            <View key={index} style={styles.summaryRow}>
+              <Text style={styles.summaryCell}>
+                {property.property.address.street}, {property.property.address.city}
+              </Text>
+              <Text style={styles.summaryCell}>
+                {formatTaxAmount(property.income.rentalIncome)}
+              </Text>
+              <Text style={styles.summaryCell}>
+                {formatTaxAmount(property.totals.totalExpenses - property.expenses.depreciation)}
+              </Text>
+              <Text style={styles.summaryCell}>
+                {formatTaxAmount(property.expenses.depreciation)}
+              </Text>
+              <Text style={styles.summaryCell}>
+                {property.totals.netIncome < 0
+                  ? `(${formatTaxAmount(Math.abs(property.totals.netIncome))})`
+                  : formatTaxAmount(property.totals.netIncome)
+                }
+              </Text>
+            </View>
+          ))}
+
+          {/* Totals Row */}
+          <View style={[styles.summaryRow, { fontWeight: "bold", borderTopWidth: 2 }]}>
+            <Text style={styles.summaryCell}>TOTAL</Text>
+            <Text style={styles.summaryCell}>{formatTaxAmount(summary.totals.totalIncome)}</Text>
+            <Text style={styles.summaryCell}>{formatTaxAmount(summary.totals.totalExpenses - summary.totals.totalDepreciation)}</Text>
+            <Text style={styles.summaryCell}>{formatTaxAmount(summary.totals.totalDepreciation)}</Text>
+            <Text style={styles.summaryCell}>
+              {summary.totals.netIncome < 0
+                ? `(${formatTaxAmount(Math.abs(summary.totals.netIncome))})`
+                : formatTaxAmount(summary.totals.netIncome)
+              }
+            </Text>
+          </View>
+        </View>
+
+        {/* Individual Property Details */}
+        {summary.properties.map((property, index) => (
+          <View key={index} style={{ marginTop: 30 }}>
+            <View style={styles.propertyHeader}>
+              <Text>
+                Property {String.fromCharCode(65 + index)}: {property.property.address.street}, {property.property.address.city}, {property.property.address.state}
+              </Text>
+            </View>
+
+            {/* Condensed Schedule E for this property */}
+            <View style={styles.row}>
+              <Text style={styles.lineNumber}>3</Text>
+              <Text style={styles.description}>Rents received</Text>
+              <Text style={styles.amount}>{formatTaxAmount(property.income.rentalIncome)}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.lineNumber}>20</Text>
+              <Text style={styles.description}>Total expenses</Text>
+              <Text style={styles.amount}>{formatTaxAmount(property.totals.totalExpenses)}</Text>
+            </View>
+            <View style={[styles.totalRow, { borderTopWidth: 1 }]}>
+              <Text style={styles.lineNumber}>21</Text>
+              <Text style={styles.description}>Income or (loss)</Text>
+              <Text style={styles.amount}>
+                {property.totals.netIncome < 0
+                  ? `(${formatTaxAmount(Math.abs(property.totals.netIncome))})`
+                  : formatTaxAmount(property.totals.netIncome)
+                }
+              </Text>
+            </View>
+          </View>
+        ))}
+
+        {/* Footer */}
+        <Text style={styles.footer}>
+          Generated by PropOwl - The wise way to manage rentals
+        </Text>
+      </Page>
+    </Document>
+  );
+}
+
+/**
+ * Generate PDF filename based on data
+ */
+export function generatePDFFilename(
+  data: ScheduleEData | ScheduleESummary
+): string {
+  const taxYear = "taxYear" in data ? data.taxYear : data.properties[0]?.taxYear;
+  const isMultiple = "properties" in data ? data.properties.length > 1 : false;
+
+  const base = isMultiple ? "schedule-e-summary" : "schedule-e-property";
+
+  return `${base}-${taxYear}.pdf`;
+}
