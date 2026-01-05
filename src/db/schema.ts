@@ -42,6 +42,13 @@ export const expenseCategoryEnum = pgEnum("expense_category", [
   "other", // Line 19
 ]);
 
+export const frequencyEnum = pgEnum("frequency", [
+  "one_time",
+  "monthly",
+  "quarterly",
+  "annual"
+]);
+
 // Users table (Clerk integration)
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -106,6 +113,31 @@ export const mortgages = pgTable("mortgages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const incomeTypeEnum = pgEnum("income_type", [
+  "rental",
+  "other"
+]);
+
+export const incomeEntries = pgTable("income_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id, { onDelete: "cascade" }),
+
+  taxYear: integer("tax_year").notNull(),
+  type: incomeTypeEnum("type").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  frequency: frequencyEnum("frequency").notNull().default("annual"),
+  description: text("description"),
+
+  // Order preservation
+  sortOrder: integer("sort_order").default(0).notNull(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Keep old table for backward compatibility during migration
 export const rentalIncome = pgTable("rental_income", {
   id: uuid("id").primaryKey().defaultRandom(),
   propertyId: uuid("property_id")
@@ -138,9 +170,13 @@ export const expenses = pgTable("expenses", {
   date: date("date").notNull(),
   category: expenseCategoryEnum("category").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  frequency: frequencyEnum("frequency").notNull().default("one_time"),
   description: text("description"),
   vendor: text("vendor"),
   receiptUrl: text("receipt_url"),
+
+  // Order preservation
+  sortOrder: integer("sort_order").default(0).notNull(),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -168,6 +204,8 @@ export type Property = typeof properties.$inferSelect;
 export type NewProperty = typeof properties.$inferInsert;
 export type Mortgage = typeof mortgages.$inferSelect;
 export type NewMortgage = typeof mortgages.$inferInsert;
+export type IncomeEntry = typeof incomeEntries.$inferSelect;
+export type NewIncomeEntry = typeof incomeEntries.$inferInsert;
 export type RentalIncome = typeof rentalIncome.$inferSelect;
 export type NewRentalIncome = typeof rentalIncome.$inferInsert;
 export type Expense = typeof expenses.$inferSelect;

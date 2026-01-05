@@ -6,18 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Home } from "lucide-react";
 import PropertyBasicsStep, { type PropertyBasicsData } from "./PropertyBasicsStep";
+import MortgageStep, { type MortgageData } from "./MortgageStep";
+import PropertySummaryStep from "./PropertySummaryStep";
 
 const WIZARD_STEPS = [
   { id: 1, title: "Property Basics", description: "Address and purchase details" },
-  { id: 2, title: "Mortgage", description: "Loan information" },
-  { id: 3, title: "Property Taxes", description: "Annual tax amount" },
-  { id: 4, title: "Insurance", description: "Coverage details" },
-  { id: 5, title: "Rental Income", description: "Income tracking method" },
-  { id: 6, title: "Expenses", description: "Additional costs" },
-  { id: 7, title: "Review", description: "Confirm and save" },
+  { id: 2, title: "Financing", description: "Mortgage information" },
+  { id: 3, title: "Review & Save", description: "Complete property setup" },
 ];
 
-interface PropertyData extends Partial<PropertyBasicsData> {
+interface PropertyData extends Partial<PropertyBasicsData>, Partial<MortgageData> {
   [key: string]: unknown;
 }
 
@@ -46,6 +44,33 @@ export default function PropertyWizard() {
     router.push("/dashboard");
   };
 
+  const handleSaveProperty = async () => {
+    try {
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(propertyData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Property saved successfully:", result);
+
+        // Redirect to dashboard to see the saved property
+        router.push("/dashboard");
+      } else {
+        const error = await response.json();
+        console.error("Failed to save property:", error);
+        // TODO: Show error message to user
+      }
+    } catch (error) {
+      console.error("Error saving property:", error);
+      // TODO: Show error message to user
+    }
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
@@ -56,9 +81,25 @@ export default function PropertyWizard() {
             onNext={nextStep}
           />
         );
-      // TODO: Add other steps
+      case 2:
+        return (
+          <MortgageStep
+            data={propertyData}
+            onUpdate={updatePropertyData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 3:
+        return (
+          <PropertySummaryStep
+            data={propertyData}
+            onBack={prevStep}
+            onSave={handleSaveProperty}
+          />
+        );
       default:
-        return <div>Step {currentStep} - Coming Soon</div>;
+        return <div>Step {currentStep} not found</div>;
     }
   };
 
