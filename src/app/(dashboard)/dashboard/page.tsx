@@ -10,7 +10,7 @@ import Link from "next/link";
 import { db, properties, users } from "@/db";
 import { eq } from "drizzle-orm";
 import { Plus, DollarSign, Home } from "lucide-react";
-import { PortfolioSummaryCard } from "@/components/dashboard/PortfolioSummaryCard";
+import { PortfolioCommandCenter } from "@/components/dashboard/PortfolioCommandCenter";
 import { PropertyCard } from "@/components/dashboard/PropertyCard";
 
 export default async function DashboardPage() {
@@ -73,6 +73,18 @@ export default async function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Portfolio Command Center - Top Priority Display */}
+        {userProperties.length > 0 && (
+          <div className="mb-12">
+            <PortfolioCommandCenter
+              defaultTaxYear={2026}
+              propertyCount={userProperties.length}
+              totalPortfolioValue={userProperties.reduce((sum, p) => sum + parseFloat(p.purchasePrice), 0)}
+            />
+          </div>
+        )}
+
+        {/* Properties Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -124,9 +136,9 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Summary Stats */}
+        {/* Summary Stats - Lower Priority Display */}
         {userProperties.length > 0 && (
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
             <Card className="border border-violet-200 bg-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -154,11 +166,6 @@ export default async function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-
-            <PortfolioSummaryCard
-              defaultTaxYear={2026}
-              propertyCount={userProperties.length}
-            />
           </div>
         )}
       </main>

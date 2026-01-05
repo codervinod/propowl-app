@@ -9,7 +9,6 @@ import {
   ScheduleEIncome,
   ScheduleESummary,
   ScheduleEProperty,
-  SCHEDULE_E_LINE_MAPPING,
 } from "./types";
 import {
   calculateDepreciationForTaxYear,
@@ -304,6 +303,135 @@ export function formatTaxAmount(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+/**
+ * Enhanced portfolio metrics for CDO analysis
+ */
+export interface EnhancedPortfolioMetrics {
+  netCashFlow: number;           // Actual money in pocket (excludes depreciation)
+  taxImpact: number;             // Schedule E net income/loss (includes depreciation)
+  operatingCashFlow: number;     // Revenue - operating expenses (excludes depreciation and interest)
+  cashOnCashReturn: number;      // Cash flow / cash invested (annual percentage)
+  portfolioROI: number;          // Annual return on investment
+  expenseRatio: number;          // Operating expenses / income
+  availableDepreciation: number; // Total depreciation deductions taken
+  operatingExpenses: number;     // Total expenses excluding depreciation
+  depreciationAmount: number;    // Total depreciation across portfolio
+}
+
+/**
+ * Calculate cash flow vs tax impact breakdown
+ */
+export function calculateCashFlowBreakdown(summary: ScheduleESummary): {
+  netCashFlow: number;
+  depreciationBenefit: number;
+  taxImpact: number;
+  operatingProfit: number;
+} {
+  const depreciationAmount = summary.totals.totalDepreciation;
+  const taxImpact = summary.totals.netIncome; // Includes depreciation
+  const netCashFlow = taxImpact + depreciationAmount; // Add back non-cash depreciation
+  const operatingProfit = summary.totals.totalIncome - (summary.totals.totalExpenses - depreciationAmount);
+
+  return {
+    netCashFlow: Math.round(netCashFlow * 100) / 100,
+    depreciationBenefit: Math.round(depreciationAmount * 100) / 100,
+    taxImpact: Math.round(taxImpact * 100) / 100,
+    operatingProfit: Math.round(operatingProfit * 100) / 100,
+  };
+}
+
+/**
+ * Calculate enhanced portfolio metrics for CDO dashboard
+ */
+export function calculateEnhancedPortfolioMetrics(
+  summary: ScheduleESummary,
+  totalInvestment: number // Total purchase price across all properties
+): EnhancedPortfolioMetrics {
+  const cashFlowBreakdown = calculateCashFlowBreakdown(summary);
+  const totalIncome = summary.totals.totalIncome;
+  const operatingExpenses = summary.totals.totalExpenses - summary.totals.totalDepreciation;
+
+  // Calculate returns
+  const portfolioROI = totalInvestment > 0 ? (cashFlowBreakdown.netCashFlow / totalInvestment) * 100 : 0;
+  const expenseRatio = totalIncome > 0 ? (operatingExpenses / totalIncome) * 100 : 0;
+
+  // Cash-on-cash return (assuming 20% down payment for financed properties)
+  const estimatedCashInvested = totalInvestment * 0.25; // Conservative estimate
+  const cashOnCashReturn = estimatedCashInvested > 0 ? (cashFlowBreakdown.netCashFlow / estimatedCashInvested) * 100 : 0;
+
+  return {
+    netCashFlow: cashFlowBreakdown.netCashFlow,
+    taxImpact: cashFlowBreakdown.taxImpact,
+    operatingCashFlow: cashFlowBreakdown.operatingProfit,
+    cashOnCashReturn: Math.round(cashOnCashReturn * 100) / 100,
+    portfolioROI: Math.round(portfolioROI * 100) / 100,
+    expenseRatio: Math.round(expenseRatio * 100) / 100,
+    availableDepreciation: summary.totals.totalDepreciation,
+    operatingExpenses: Math.round(operatingExpenses * 100) / 100,
+    depreciationAmount: summary.totals.totalDepreciation,
+  };
+}
+
+/**
+ * Calculate property-level performance metrics
+ */
+export interface PropertyPerformanceMetrics {
+  monthlyNetCashFlow: number;
+  annualROI: number;
+  expenseRatio: number;
+  isProfit: boolean;
+  profitability: 'excellent' | 'good' | 'break-even' | 'loss';
+  recommendedAction?: string;
+}
+
+export function calculatePropertyPerformance(
+  data: ScheduleEData,
+  purchasePrice: number
+): PropertyPerformanceMetrics {
+  const cashFlowBreakdown = calculateCashFlowBreakdown({
+    taxYear: data.taxYear,
+    properties: [data],
+    totals: {
+      totalIncome: data.income.rentalIncome,
+      totalExpenses: data.totals.totalExpenses,
+      totalDepreciation: data.expenses.depreciation,
+      netIncome: data.totals.netIncome,
+    },
+  });
+
+  const monthlyNetCashFlow = cashFlowBreakdown.netCashFlow / 12;
+  const annualROI = purchasePrice > 0 ? (cashFlowBreakdown.netCashFlow / purchasePrice) * 100 : 0;
+  const expenseRatio = data.income.rentalIncome > 0 ?
+    ((data.totals.totalExpenses - data.expenses.depreciation) / data.income.rentalIncome) * 100 : 0;
+
+  const isProfit = cashFlowBreakdown.netCashFlow > 0;
+
+  // Determine profitability level
+  let profitability: PropertyPerformanceMetrics['profitability'];
+  let recommendedAction: string | undefined;
+
+  if (annualROI >= 8) {
+    profitability = 'excellent';
+  } else if (annualROI >= 4) {
+    profitability = 'good';
+  } else if (annualROI >= -2) {
+    profitability = 'break-even';
+    recommendedAction = 'Consider rent increase or expense reduction';
+  } else {
+    profitability = 'loss';
+    recommendedAction = 'Review pricing and expenses urgently';
+  }
+
+  return {
+    monthlyNetCashFlow: Math.round(monthlyNetCashFlow * 100) / 100,
+    annualROI: Math.round(annualROI * 100) / 100,
+    expenseRatio: Math.round(expenseRatio * 100) / 100,
+    isProfit,
+    profitability,
+    recommendedAction,
+  };
 }
 
 /**

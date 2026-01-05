@@ -2,6 +2,7 @@
 
 import useSWR from "swr";
 import { ScheduleESummary, ScheduleEData } from "@/lib/schedule-e/types";
+// Note: Enhanced calculations are imported directly in components where needed
 
 interface PortfolioDataResponse {
   success: boolean;

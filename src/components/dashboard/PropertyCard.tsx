@@ -13,12 +13,15 @@ import {
   MapPin,
   Calendar,
   TrendingUp,
-  TrendingDown,
   DollarSign,
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePropertyPerformance } from "@/hooks/usePortfolioData";
+import {
+  calculatePropertyPerformance,
+  PropertyPerformanceMetrics
+} from "@/lib/schedule-e/calculations";
 
 interface PropertyCardProps {
   property: {
@@ -67,35 +70,84 @@ export function PropertyCard({
     return typeLabels[type] || type;
   };
 
-  const getPerformanceDisplay = () => {
+  const getEnhancedPerformanceDisplay = () => {
     if (isLoading) {
       return {
         income: <Loader2 className="h-3 w-3 animate-spin" />,
-        netIncome: <Loader2 className="h-3 w-3 animate-spin" />,
+        netCashFlow: <Loader2 className="h-3 w-3 animate-spin" />,
         isProfit: null,
+        roi: <Loader2 className="h-3 w-3 animate-spin" />,
+        profitability: 'break-even' as const,
+        recommendedAction: undefined,
       };
     }
 
     if (error || !performanceData) {
       return {
         income: "No data",
-        netIncome: "No data",
+        netCashFlow: "No data",
         isProfit: null,
+        roi: "No data",
+        profitability: 'break-even' as const,
+        recommendedAction: undefined,
       };
     }
 
     const income = performanceData.income.rentalIncome;
-    const netIncome = performanceData.totals.netIncome;
-    const isProfit = netIncome >= 0;
+    const purchasePrice = parseFloat(property.purchasePrice);
+
+    // Calculate enhanced performance metrics
+    const performanceMetrics = calculatePropertyPerformance(performanceData, purchasePrice);
 
     return {
       income: formatCurrency(income),
-      netIncome: formatCurrency(Math.abs(netIncome)),
-      isProfit,
+      netCashFlow: formatCurrency(Math.abs(performanceMetrics.monthlyNetCashFlow)),
+      isProfit: performanceMetrics.isProfit,
+      roi: `${performanceMetrics.annualROI.toFixed(1)}%`,
+      profitability: performanceMetrics.profitability,
+      recommendedAction: performanceMetrics.recommendedAction,
     };
   };
 
-  const performance = getPerformanceDisplay();
+  const performance = getEnhancedPerformanceDisplay();
+
+  // Get performance indicator styling
+  const getProfitabilityDisplay = (profitability: PropertyPerformanceMetrics['profitability']) => {
+    switch (profitability) {
+      case 'excellent':
+        return {
+          label: '🚀 Excellent',
+          colorClass: 'text-green-700 bg-green-100',
+          description: 'High-performing property'
+        };
+      case 'good':
+        return {
+          label: '✅ Good',
+          colorClass: 'text-green-600 bg-green-50',
+          description: 'Solid investment performance'
+        };
+      case 'break-even':
+        return {
+          label: '⚠️ Break-even',
+          colorClass: 'text-orange-600 bg-orange-50',
+          description: 'Consider optimization'
+        };
+      case 'loss':
+        return {
+          label: '❌ Loss',
+          colorClass: 'text-red-600 bg-red-50',
+          description: 'Needs immediate attention'
+        };
+      default:
+        return {
+          label: 'Unknown',
+          colorClass: 'text-gray-600 bg-gray-50',
+          description: 'Performance analysis pending'
+        };
+    }
+  };
+
+  const profitabilityDisplay = getProfitabilityDisplay(performance.profitability);
 
   return (
     <Link href={`/properties/${property.id}`}>
@@ -130,51 +182,73 @@ export function PropertyCard({
             </div>
           </div>
 
-          {/* Enhanced YTD Performance Section */}
+          {/* Enhanced Investment Performance Section */}
           <div className="border-t pt-3">
-            <div className="text-xs font-medium text-gray-700 mb-2">
-              {currentYear} YTD Performance:
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-gray-700">
+                {currentYear} Performance:
+              </span>
+              <div className={cn("text-xs px-2 py-1 rounded-full font-medium", profitabilityDisplay.colorClass)}>
+                {profitabilityDisplay.label}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <div className="flex items-center gap-1 mb-1">
-                  <DollarSign className="h-3 w-3 text-blue-500" />
-                  <span className="text-gray-500 text-xs">Rental Income</span>
-                </div>
-                <p className="font-semibold text-blue-600">
-                  {performance.income}
-                </p>
-              </div>
-              <div>
-                <div className="flex items-center gap-1 mb-1">
-                  {performance.isProfit === true && (
-                    <TrendingUp className="h-3 w-3 text-green-500" />
-                  )}
-                  {performance.isProfit === false && (
-                    <TrendingDown className="h-3 w-3 text-red-500" />
-                  )}
-                  {performance.isProfit === null && (
-                    <div className="h-3 w-3" />
-                  )}
-                  <span className="text-gray-500 text-xs">Net Income</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <p className={cn(
-                    "font-semibold",
-                    performance.isProfit === true && "text-green-600",
-                    performance.isProfit === false && "text-red-600",
-                    performance.isProfit === null && "text-gray-400"
+
+            <div className="space-y-3">
+              {/* ROI and Cash Flow Row */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <TrendingUp className="h-3 w-3 text-purple-500" />
+                    <span className="text-gray-500 text-xs">Annual ROI</span>
+                  </div>
+                  <p className={cn("font-bold",
+                    performance.profitability === 'excellent' ? "text-green-600" :
+                    performance.profitability === 'good' ? "text-green-600" :
+                    performance.profitability === 'break-even' ? "text-orange-600" :
+                    "text-red-600"
                   )}>
-                    {performance.isProfit === false ? "-" : ""}{performance.netIncome}
+                    {performance.roi}
                   </p>
-                  {performance.isProfit === true && (
-                    <span className="text-green-600 text-xs">✓ Profitable</span>
-                  )}
-                  {performance.isProfit === false && (
-                    <span className="text-red-600 text-xs">⚠ Loss</span>
-                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <DollarSign className={cn("h-3 w-3",
+                      performance.isProfit ? "text-green-500" : "text-red-500"
+                    )} />
+                    <span className="text-gray-500 text-xs">Cash Flow/mo</span>
+                  </div>
+                  <p className={cn("font-semibold",
+                    performance.isProfit ? "text-green-600" : "text-red-600"
+                  )}>
+                    {performance.isProfit ? "+" : "-"}{performance.netCashFlow}
+                  </p>
                 </div>
               </div>
+
+              {/* Rental Income Row */}
+              <div className="bg-blue-50 rounded p-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-3 w-3 text-blue-500" />
+                    <span className="text-xs text-gray-600">Rental Income</span>
+                  </div>
+                  <span className="font-semibold text-blue-600 text-sm">
+                    {performance.income}
+                  </span>
+                </div>
+              </div>
+
+              {/* Recommendation if available */}
+              {performance.recommendedAction && (
+                <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs">💡</span>
+                    <p className="text-xs text-amber-700 font-medium">
+                      {performance.recommendedAction}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
