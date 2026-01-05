@@ -40,8 +40,12 @@ import {
   Save,
   Loader2,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  Download,
+  Calculator
 } from "lucide-react";
+import ScheduleEForm from "@/components/reports/ScheduleEForm";
+import { ScheduleEData } from "@/lib/schedule-e/types";
 
 interface TaxYearDataEntryProps {
   propertyId: string;
@@ -171,6 +175,12 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
   // Loading and tab state
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("income");
+
+  // Schedule E state
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [scheduleEError, setScheduleEError] = useState<string | null>(null);
+  const [showScheduleEModal, setShowScheduleEModal] = useState(false);
+  const [scheduleEData, setScheduleEData] = useState<ScheduleEData | null>(null);
 
   // Load existing data
   useEffect(() => {
@@ -469,6 +479,41 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
     }
   };
 
+  // Schedule E handlers
+  const handleGenerateScheduleE = async () => {
+    try {
+      setIsGeneratingReport(true);
+      setScheduleEError(null);
+
+      const response = await fetch(`/api/schedule-e?propertyId=${propertyId}&taxYear=${taxYear}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate Schedule E: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        // Set the data and show the modal
+        setScheduleEData(result.data);
+        setShowScheduleEModal(true);
+        console.log('Schedule E Data:', result.data);
+      } else {
+        throw new Error(result.error || 'Failed to generate Schedule E');
+      }
+    } catch (error) {
+      console.error('Error generating Schedule E:', error);
+      setScheduleEError(error instanceof Error ? error.message : 'Unknown error occurred');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleExportData = () => {
+    // Export CSV for the current property
+    const csvUrl = `/api/reports/csv?propertyId=${propertyId}&taxYear=${taxYear}`;
+    window.open(csvUrl, '_blank');
+  };
 
   if (isLoading) {
     return (
@@ -988,6 +1033,54 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
                   </div>
                 </div>
 
+                {/* Schedule E Actions */}
+                <div className="border-t pt-6">
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-lg flex items-center gap-2">
+                        <Calculator className="h-5 w-5 text-orange-500" />
+                        Tax Reports
+                      </h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Generate IRS-compliant Schedule E forms for tax filing
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleGenerateScheduleE()}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                        disabled={isGeneratingReport}
+                      >
+                        {isGeneratingReport ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Generate Schedule E
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleExportData()}
+                        disabled={isGeneratingReport}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Export Data
+                      </Button>
+                    </div>
+                  </div>
+
+                  {scheduleEError && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-red-700 text-sm">{scheduleEError}</p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Detailed Breakdown */}
                 <div className="space-y-4">
                   <h4 className="font-semibold text-lg">Income & Expense Breakdown</h4>
@@ -1049,6 +1142,20 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
           </div>
         </CardContent>
       </Card>
+
+      {/* Schedule E Modal */}
+      {scheduleEData && (
+        <ScheduleEForm
+          data={scheduleEData}
+          isOpen={showScheduleEModal}
+          onClose={() => {
+            setShowScheduleEModal(false);
+            setScheduleEData(null);
+          }}
+          propertyId={propertyId}
+          taxYear={taxYear}
+        />
+      )}
     </div>
   );
 }
