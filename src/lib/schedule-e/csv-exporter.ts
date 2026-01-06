@@ -190,7 +190,7 @@ function exportToTurboTaxFormat(data: ScheduleEData): string {
  */
 function exportToQuickBooksFormat(data: ScheduleEData): string {
   const rows: string[] = [];
-  const address = `"${data.property.address.street}, ${data.property.address.city}, ${data.property.address.state}"`;
+  const address = `"${data.property.address.street}${data.property.address.streetLine2 ? `, ${data.property.address.streetLine2}` : ''}, ${data.property.address.city}, ${data.property.address.state}"`;
 
   // Header row (only include once)
   rows.push(CSV_CONFIGS.quickbooks.headers.join(","));

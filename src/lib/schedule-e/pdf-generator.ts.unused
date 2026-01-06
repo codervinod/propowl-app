@@ -141,7 +141,7 @@ export function createPropertyScheduleEPDF(data: ScheduleEData) {
         {/* Property Information */}
         <View style={styles.propertyHeader}>
           <Text>
-            Property A: {data.property.address.street}, {data.property.address.city}, {data.property.address.state} {data.property.address.zipCode}
+            Property A: {data.property.address.street}{data.property.address.streetLine2 ? `, ${data.property.address.streetLine2}` : ''}, {data.property.address.city}, {data.property.address.state} {data.property.address.zipCode}
           </Text>
         </View>
 
@@ -319,7 +319,7 @@ export function createScheduleESummaryPDF(summary: ScheduleESummary) {
           {summary.properties.map((property, index) => (
             <View key={index} style={styles.summaryRow}>
               <Text style={styles.summaryCell}>
-                {property.property.address.street}, {property.property.address.city}
+                {property.property.address.street}{property.property.address.streetLine2 ? `, ${property.property.address.streetLine2}` : ''}, {property.property.address.city}
               </Text>
               <Text style={styles.summaryCell}>
                 {formatTaxAmount(property.income.rentalIncome)}
@@ -359,7 +359,7 @@ export function createScheduleESummaryPDF(summary: ScheduleESummary) {
           <View key={index} style={{ marginTop: 30 }}>
             <View style={styles.propertyHeader}>
               <Text>
-                Property {String.fromCharCode(65 + index)}: {property.property.address.street}, {property.property.address.city}, {property.property.address.state}
+                Property {String.fromCharCode(65 + index)}: {property.property.address.street}{property.property.address.streetLine2 ? `, ${property.property.address.streetLine2}` : ''}, {property.property.address.city}, {property.property.address.state}
               </Text>
             </View>
 
