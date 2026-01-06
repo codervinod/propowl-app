@@ -25,12 +25,8 @@ export async function POST(request: NextRequest) {
     const validatedData = duplicateCheckSchema.parse(body);
     const { street, city, state, zipCode } = validatedData;
 
-    // Normalize address for comparison (trim and lowercase)
-    const normalizeAddress = (addr: string) => addr.trim().toLowerCase();
-    const normalizedStreet = normalizeAddress(street);
-    const normalizedCity = normalizeAddress(city);
-    const normalizedState = normalizeAddress(state);
-    const normalizedZip = normalizeAddress(zipCode);
+    // Note: Currently using exact string matching for addresses
+    // Future enhancement: Could implement normalized comparison for better duplicate detection
 
     // Check for exact duplicates in user's properties
     const userDuplicates = await db

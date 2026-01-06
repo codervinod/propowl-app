@@ -90,8 +90,20 @@ export default function PropertyBasicsStep({
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicateCheckData, setDuplicateCheckData] = useState<{
     hasDuplicate: boolean;
-    duplicateProperty?: any;
-    potentialShares: any[];
+    duplicateProperty?: {
+      id: string;
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    };
+    potentialShares: {
+      ownerEmail: string;
+      ownerName: string;
+      propertyId: string;
+      address: string;
+      suggestion: string;
+    }[];
   }>({ hasDuplicate: false, potentialShares: [] });
   const [pendingFormData, setPendingFormData] = useState<PropertyBasicsData | null>(null);
 

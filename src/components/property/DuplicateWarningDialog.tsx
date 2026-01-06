@@ -141,7 +141,7 @@ export function DuplicateWarningDialog({
           {!hasDuplicate && potentialShares.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
               <p className="text-sm text-amber-700">
-                <strong>Note:</strong> If you proceed, you'll create a separate copy of this property.
+                <strong>Note:</strong> If you proceed, you&apos;ll create a separate copy of this property.
                 Consider requesting access instead to collaborate with existing users.
               </p>
             </div>
