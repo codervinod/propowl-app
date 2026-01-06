@@ -61,11 +61,13 @@ export default function PropertyWizard() {
       } else {
         const error = await response.json();
         console.error("Failed to save property:", error);
-        // TODO: Show error message to user
+        // Throw error to be caught by PropertySummaryStep
+        throw new Error(error.message || `Failed to save property (${response.status})`);
       }
     } catch (error) {
       console.error("Error saving property:", error);
-      // TODO: Show error message to user
+      // Re-throw error so PropertySummaryStep can handle it
+      throw error instanceof Error ? error : new Error("Network error occurred while saving property");
     }
   };
 
