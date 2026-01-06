@@ -179,7 +179,7 @@ export function scheduleEToHTML(data: ScheduleEData): string {
       <title>Schedule E (Form 1040) - ${data.taxYear}</title>
       <style>
         @page {
-          size: A4;
+          size: letter;
           margin: 1in 0.75in;
         }
         body {
@@ -441,7 +441,7 @@ export function summaryToHTML(summary: ScheduleESummary): string {
       <title>Schedule E Multi-Property Summary - ${summary.taxYear}</title>
       <style>
         @page {
-          size: A4;
+          size: letter;
           margin: 1in 0.75in;
         }
         body {
