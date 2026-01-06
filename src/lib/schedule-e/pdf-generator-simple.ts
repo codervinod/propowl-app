@@ -178,13 +178,40 @@ export function scheduleEToHTML(data: ScheduleEData): string {
       <meta charset="UTF-8">
       <title>Schedule E (Form 1040) - ${data.taxYear}</title>
       <style>
-        @page { margin: 0.75in; }
+        @page {
+          size: A4;
+          margin: 1in 0.75in;
+        }
         body {
           font-family: Arial, sans-serif;
           font-size: 11px;
           line-height: 1.3;
           margin: 0;
           color: #000;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        @media print {
+          body {
+            font-size: 10px;
+            line-height: 1.2;
+          }
+          .schedule-table {
+            font-size: 9px;
+          }
+          .header {
+            margin-bottom: 15px;
+          }
+          .property-info {
+            margin: 10px 0;
+            padding: 8px;
+          }
         }
         .header {
           text-align: center;
@@ -413,13 +440,40 @@ export function summaryToHTML(summary: ScheduleESummary): string {
       <meta charset="UTF-8">
       <title>Schedule E Multi-Property Summary - ${summary.taxYear}</title>
       <style>
-        @page { margin: 0.75in; }
+        @page {
+          size: A4;
+          margin: 1in 0.75in;
+        }
         body {
           font-family: Arial, sans-serif;
           font-size: 11px;
           line-height: 1.3;
           margin: 0;
           color: #000;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        @media print {
+          body {
+            font-size: 10px;
+            line-height: 1.2;
+          }
+          .schedule-table {
+            font-size: 9px;
+          }
+          .header {
+            margin-bottom: 15px;
+          }
+          .property-info {
+            margin: 10px 0;
+            padding: 8px;
+          }
         }
         .header {
           text-align: center;
