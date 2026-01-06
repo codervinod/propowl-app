@@ -1,0 +1,1 @@
+ALTER TABLE "properties" ADD COLUMN "street_line_2" text;

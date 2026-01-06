@@ -106,6 +106,7 @@ export async function GET(request: NextRequest) {
           id: property.id,
           address: {
             street: property.street,
+            streetLine2: property.streetLine2,
             city: property.city,
             state: property.state,
             zipCode: property.zipCode,

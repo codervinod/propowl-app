@@ -71,6 +71,7 @@ export const properties = pgTable("properties", {
 
   // Address
   street: text("street").notNull(),
+  streetLine2: text("street_line_2"), // Optional unit, suite, apt number
   city: text("city").notNull(),
   state: text("state").notNull(),
   zipCode: text("zip_code").notNull(),

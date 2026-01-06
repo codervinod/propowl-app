@@ -34,11 +34,13 @@ import {
 import AddressTypeahead, { AddressComponents, PropertyDataResult } from "./AddressTypeahead";
 import { MonthPicker } from "@/components/ui/month-picker";
 import { AutoFilledBadge, LoadingFieldIndicator, ErrorMessage } from "@/components/ui/field-status";
+import { DuplicateWarningDialog } from "./DuplicateWarningDialog";
 
 // Simplified validation - only essential fields required, smart defaults for others
 const propertyBasicsSchema = z.object({
   // Address (auto-populated from typeahead)
   street: z.string().min(1, "Address is required"),
+  streetLine2: z.string().optional(), // Unit, suite, apartment number
   city: z.string().min(1, "City is required"),
   state: z.string().min(2).max(2),
   zipCode: z.string().min(5),
@@ -85,10 +87,32 @@ export default function PropertyBasicsStep({
   const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
   const [propertyDataError, setPropertyDataError] = useState<string | null>(null);
 
+  // Duplicate checking state
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateCheckData, setDuplicateCheckData] = useState<{
+    hasDuplicate: boolean;
+    duplicateProperty?: {
+      id: string;
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    };
+    potentialShares: {
+      ownerEmail: string;
+      ownerName: string;
+      propertyId: string;
+      address: string;
+      suggestion: string;
+    }[];
+  }>({ hasDuplicate: false, potentialShares: [] });
+  const [pendingFormData, setPendingFormData] = useState<PropertyBasicsData | null>(null);
+
   const form = useForm<PropertyBasicsData>({
     resolver: zodResolver(propertyBasicsSchema),
     defaultValues: {
       street: data.street || "",
+      streetLine2: data.streetLine2 || "",
       city: data.city || "",
       state: data.state || "",
       zipCode: data.zipCode || "",
@@ -190,9 +214,64 @@ export default function PropertyBasicsStep({
     }
   };
 
-  const onSubmit = (formData: PropertyBasicsData) => {
-    onUpdate(formData);
-    onNext();
+  const checkForDuplicates = async (formData: PropertyBasicsData) => {
+    try {
+      const response = await fetch("/api/properties/check-duplicate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          street: formData.street,
+          streetLine2: formData.streetLine2,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return result;
+      } else {
+        console.error("Duplicate check failed:", response.status);
+        return { hasDuplicate: false, potentialShares: [] };
+      }
+    } catch (error) {
+      console.error("Duplicate check error:", error);
+      return { hasDuplicate: false, potentialShares: [] };
+    }
+  };
+
+  const onSubmit = async (formData: PropertyBasicsData) => {
+    // Check for duplicates
+    const duplicateResult = await checkForDuplicates(formData);
+
+    if (duplicateResult.hasDuplicate || duplicateResult.potentialShares.length > 0) {
+      // Show duplicate warning dialog
+      setDuplicateCheckData(duplicateResult);
+      setPendingFormData(formData);
+      setShowDuplicateDialog(true);
+    } else {
+      // No duplicates, proceed normally
+      onUpdate(formData);
+      onNext();
+    }
+  };
+
+  const handleProceedAnyway = () => {
+    if (pendingFormData) {
+      setShowDuplicateDialog(false);
+      onUpdate(pendingFormData);
+      onNext();
+      setPendingFormData(null);
+    }
+  };
+
+  const handleDuplicateDialogClose = () => {
+    setShowDuplicateDialog(false);
+    setPendingFormData(null);
+    setDuplicateCheckData({ hasDuplicate: false, potentialShares: [] });
   };
 
   return (
@@ -223,23 +302,47 @@ export default function PropertyBasicsStep({
 
               {/* Address Fields (auto-populated, read-only for display) */}
               {addressSelected && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border">
-                  <div>
-                    <Label className="text-sm text-gray-600">Street</Label>
-                    <p className="font-medium">{form.watch("street")}</p>
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-600">Street</Label>
+                      <p className="font-medium">{form.watch("street")}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">City</Label>
+                      <p className="font-medium">{form.watch("city")}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">State</Label>
+                      <p className="font-medium">{form.watch("state")}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">ZIP Code</Label>
+                      <p className="font-medium">{form.watch("zipCode")}</p>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">City</Label>
-                    <p className="font-medium">{form.watch("city")}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">State</Label>
-                    <p className="font-medium">{form.watch("state")}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">ZIP Code</Label>
-                    <p className="font-medium">{form.watch("zipCode")}</p>
-                  </div>
+
+                  {/* Unit/Suite Field - editable for condos, apartments */}
+                  <FormField
+                    control={form.control}
+                    name="streetLine2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit/Suite/Apartment (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Unit 2A, Suite 101, Apt 4B"
+                            {...field}
+                            className="max-w-md"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Add unit, suite, or apartment number if applicable
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               )}
             </div>
@@ -449,12 +552,23 @@ export default function PropertyBasicsStep({
           {/* Next Button */}
           <div className="flex justify-end pt-6">
             <Button type="submit" className="flex items-center gap-2">
-              Continue to Mortgage Information
+              Continue to Review & Save
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </form>
       </Form>
+
+      {/* Duplicate Warning Dialog */}
+      <DuplicateWarningDialog
+        isOpen={showDuplicateDialog}
+        onClose={handleDuplicateDialogClose}
+        onProceedAnyway={handleProceedAnyway}
+        hasDuplicate={duplicateCheckData.hasDuplicate}
+        duplicateProperty={duplicateCheckData.duplicateProperty}
+        potentialShares={duplicateCheckData.potentialShares}
+        address={pendingFormData ? `${pendingFormData.street}${pendingFormData.streetLine2 ? `, ${pendingFormData.streetLine2}` : ''}, ${pendingFormData.city}, ${pendingFormData.state}` : ""}
+      />
     </TooltipProvider>
   );
 }

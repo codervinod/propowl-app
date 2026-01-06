@@ -108,7 +108,7 @@ export default function PropertySummaryStep({
             <div>
               <span className="text-sm font-medium text-gray-600">Address:</span>
               <p className="text-gray-900">
-                {[data.street, data.city, data.state, data.zipCode]
+                {[data.street, data.streetLine2, data.city, data.state, data.zipCode]
                   .filter(Boolean)
                   .join(", ") || "Not specified"}
               </p>

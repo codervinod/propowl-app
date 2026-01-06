@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     const propertyId = searchParams.get("propertyId");
     const taxYear = parseInt(searchParams.get("taxYear") || new Date().getFullYear().toString());
     const includeAllProperties = searchParams.get("includeAllProperties") === "true";
+    const format = searchParams.get("format") || "pdf"; // New parameter for format
 
     // Fetch Schedule E data from our existing API endpoint
     const scheduleEUrl = new URL(`${request.nextUrl.origin}/api/schedule-e`);
@@ -64,6 +65,16 @@ export async function GET(request: NextRequest) {
     } else {
       // Single property
       htmlContent = scheduleEToHTML(data);
+    }
+
+    // If format is HTML, return the HTML content directly for printing
+    if (format === "html") {
+      return new Response(htmlContent, {
+        headers: {
+          "Content-Type": "text/html",
+          "Cache-Control": "no-cache",
+        },
+      });
     }
 
     // Generate PDF using Puppeteer

@@ -23,7 +23,7 @@ export function generateScheduleEText(data: ScheduleEData): string {
 
   // Property Information
   lines.push("Property Information:");
-  lines.push(`Address: ${data.property.address.street}, ${data.property.address.city}, ${data.property.address.state} ${data.property.address.zipCode}`);
+  lines.push(`Address: ${data.property.address.street}${data.property.address.streetLine2 ? `, ${data.property.address.streetLine2}` : ''}, ${data.property.address.city}, ${data.property.address.state} ${data.property.address.zipCode}`);
   lines.push(`Property Type: ${data.property.propertyType}`);
   lines.push(`Purchase Date: ${data.property.purchaseDate}`);
   lines.push("");
@@ -96,7 +96,7 @@ export function generateScheduleESummaryText(summary: ScheduleESummary): string 
   lines.push("─".repeat(80));
 
   summary.properties.forEach((property) => {
-    const address = `${property.property.address.street}, ${property.property.address.city}`;
+    const address = `${property.property.address.street}${property.property.address.streetLine2 ? `, ${property.property.address.streetLine2}` : ''}, ${property.property.address.city}`;
     const shortAddress = address.length > 33 ? address.substring(0, 30) + "..." : address;
 
     const income = formatTaxAmount(property.income.rentalIncome);
@@ -126,7 +126,7 @@ export function generateScheduleESummaryText(summary: ScheduleESummary): string 
   // Individual property details
   summary.properties.forEach((property, index) => {
     lines.push("");
-    lines.push(`PROPERTY ${String.fromCharCode(65 + index)}: ${property.property.address.street}, ${property.property.address.city}, ${property.property.address.state}`);
+    lines.push(`PROPERTY ${String.fromCharCode(65 + index)}: ${property.property.address.street}${property.property.address.streetLine2 ? `, ${property.property.address.streetLine2}` : ''}, ${property.property.address.city}, ${property.property.address.state}`);
     lines.push("─".repeat(60));
     lines.push(`Line 3. Rents received                           ${formatTaxAmount(property.income.rentalIncome).padStart(12)}`);
     lines.push(`Line 20. Total expenses                          ${formatTaxAmount(property.totals.totalExpenses).padStart(12)}`);
@@ -178,13 +178,40 @@ export function scheduleEToHTML(data: ScheduleEData): string {
       <meta charset="UTF-8">
       <title>Schedule E (Form 1040) - ${data.taxYear}</title>
       <style>
-        @page { margin: 0.75in; }
+        @page {
+          size: A4;
+          margin: 1in 0.75in;
+        }
         body {
           font-family: Arial, sans-serif;
           font-size: 11px;
           line-height: 1.3;
           margin: 0;
           color: #000;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        @media print {
+          body {
+            font-size: 10px;
+            line-height: 1.2;
+          }
+          .schedule-table {
+            font-size: 9px;
+          }
+          .header {
+            margin-bottom: 15px;
+          }
+          .property-info {
+            margin: 10px 0;
+            padding: 8px;
+          }
         }
         .header {
           text-align: center;
@@ -271,7 +298,7 @@ export function scheduleEToHTML(data: ScheduleEData): string {
       </div>
 
       <div class="property-info">
-        <strong>Property A:</strong> ${data.property.address.street}, ${data.property.address.city}, ${data.property.address.state} ${data.property.address.zipCode}<br>
+        <strong>Property A:</strong> ${data.property.address.street}${data.property.address.streetLine2 ? `, ${data.property.address.streetLine2}` : ''}, ${data.property.address.city}, ${data.property.address.state} ${data.property.address.zipCode}<br>
         <strong>Property Type:</strong> ${data.property.propertyType}<br>
         <strong>Purchase Date:</strong> ${new Date(data.property.purchaseDate).toLocaleDateString()}
       </div>
@@ -413,13 +440,40 @@ export function summaryToHTML(summary: ScheduleESummary): string {
       <meta charset="UTF-8">
       <title>Schedule E Multi-Property Summary - ${summary.taxYear}</title>
       <style>
-        @page { margin: 0.75in; }
+        @page {
+          size: A4;
+          margin: 1in 0.75in;
+        }
         body {
           font-family: Arial, sans-serif;
           font-size: 11px;
           line-height: 1.3;
           margin: 0;
           color: #000;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        @media print {
+          body {
+            font-size: 10px;
+            line-height: 1.2;
+          }
+          .schedule-table {
+            font-size: 9px;
+          }
+          .header {
+            margin-bottom: 15px;
+          }
+          .property-info {
+            margin: 10px 0;
+            padding: 8px;
+          }
         }
         .header {
           text-align: center;
@@ -483,7 +537,7 @@ export function summaryToHTML(summary: ScheduleESummary): string {
         <tbody>
           ${summary.properties.map((property, index) => `
             <tr>
-              <td><strong>Property ${String.fromCharCode(65 + index)}:</strong><br>${property.property.address.street}<br>${property.property.address.city}, ${property.property.address.state}</td>
+              <td><strong>Property ${String.fromCharCode(65 + index)}:</strong><br>${property.property.address.street}${property.property.address.streetLine2 ? `, ${property.property.address.streetLine2}` : ''}<br>${property.property.address.city}, ${property.property.address.state}</td>
               <td class="amount">${formatTaxAmount(property.income.rentalIncome)}</td>
               <td class="amount">${formatTaxAmount(property.totals.totalExpenses - property.expenses.depreciation)}</td>
               <td class="amount">${formatTaxAmount(property.expenses.depreciation)}</td>
@@ -502,7 +556,7 @@ export function summaryToHTML(summary: ScheduleESummary): string {
 
       ${summary.properties.map((property, index) => `
         <div class="property-section">
-          <h3>Property ${String.fromCharCode(65 + index)}: ${property.property.address.street}, ${property.property.address.city}, ${property.property.address.state}</h3>
+          <h3>Property ${String.fromCharCode(65 + index)}: ${property.property.address.street}${property.property.address.streetLine2 ? `, ${property.property.address.streetLine2}` : ''}, ${property.property.address.city}, ${property.property.address.state}</h3>
           <table style="width: 60%; border-collapse: collapse;">
             <tr style="border: 1px solid #000; background: #e8f5e8;">
               <td style="padding: 5px; border: 1px solid #000;"><strong>Line 3. Rents received</strong></td>

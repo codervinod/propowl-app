@@ -83,7 +83,7 @@ export function exportPropertyToCSV(
 ): string {
   const config = CSV_CONFIGS[format];
   // Property address for potential future use
-  // const propertyAddress = `${data.property.address.street}, ${data.property.address.city}, ${data.property.address.state}`;
+  // const propertyAddress = `${data.property.address.street}${data.property.address.streetLine2 ? `, ${data.property.address.streetLine2}` : ''}, ${data.property.address.city}, ${data.property.address.state}`;
 
   switch (format) {
     case "turbotax":
@@ -134,7 +134,7 @@ function exportToStandardCSV(
 
   // Add property data rows
   properties.forEach((property) => {
-    const address = `"${property.property.address.street}, ${property.property.address.city}, ${property.property.address.state}"`;
+    const address = `"${property.property.address.street}${property.property.address.streetLine2 ? `, ${property.property.address.streetLine2}` : ''}, ${property.property.address.city}, ${property.property.address.state}"`;
     const row = [
       address,
       property.taxYear.toString(),
@@ -154,7 +154,7 @@ function exportToStandardCSV(
  */
 function exportToTurboTaxFormat(data: ScheduleEData): string {
   const config = CSV_CONFIGS.turbotax;
-  const address = `"${data.property.address.street}, ${data.property.address.city}, ${data.property.address.state}"`;
+  const address = `"${data.property.address.street}${data.property.address.streetLine2 ? `, ${data.property.address.streetLine2}` : ''}, ${data.property.address.city}, ${data.property.address.state}"`;
 
   // Header row (only include once)
   const headerRow = config.headers.join(",");
@@ -190,7 +190,7 @@ function exportToTurboTaxFormat(data: ScheduleEData): string {
  */
 function exportToQuickBooksFormat(data: ScheduleEData): string {
   const rows: string[] = [];
-  const address = `"${data.property.address.street}, ${data.property.address.city}, ${data.property.address.state}"`;
+  const address = `"${data.property.address.street}${data.property.address.streetLine2 ? `, ${data.property.address.streetLine2}` : ''}, ${data.property.address.city}, ${data.property.address.state}"`;
 
   // Header row (only include once)
   rows.push(CSV_CONFIGS.quickbooks.headers.join(","));

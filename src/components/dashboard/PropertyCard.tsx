@@ -24,6 +24,7 @@ interface PropertyCardProps {
   property: {
     id: string;
     street: string;
+    streetLine2?: string | null;
     city: string;
     state: string;
     propertyType: string;
@@ -114,7 +115,7 @@ export function PropertyCard({
           </CardTitle>
           <CardDescription className="flex items-center gap-2 text-gray-600">
             <MapPin className="h-4 w-4" />
-            {property.street}, {property.city}, {property.state}
+            {property.street}{property.streetLine2 ? `, ${property.streetLine2}` : ''}, {property.city}, {property.state}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

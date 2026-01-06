@@ -8,6 +8,7 @@ import { z } from "zod";
 const createPropertySchema = z.object({
   // Address
   street: z.string().min(1, "Street is required"),
+  streetLine2: z.string().optional(),
   city: z.string().min(1, "City is required"),
   state: z.string().length(2, "State must be 2 characters"),
   zipCode: z.string().min(5, "ZIP code is required"),
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
     const newProperty = await db.insert(properties).values({
       userId,
       street: propertyData.street,
+      streetLine2: propertyData.streetLine2 || null,
       city: propertyData.city,
       state: propertyData.state,
       zipCode: propertyData.zipCode,

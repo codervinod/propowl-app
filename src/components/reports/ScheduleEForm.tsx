@@ -86,13 +86,59 @@ export default function ScheduleEForm({
     window.open(csvUrl, '_blank');
   };
 
+  const handlePrint = async () => {
+    try {
+      // Get the HTML content that's used to generate the PDF
+      let apiUrl = `/api/reports/pdf?taxYear=${taxYear}&format=html`;
+
+      if (isMultiProperty) {
+        apiUrl += "&includeAllProperties=true";
+      } else if (propertyId) {
+        apiUrl += `&propertyId=${propertyId}`;
+      }
+
+      // Fetch the HTML content from the PDF API
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch print content');
+      }
+
+      const htmlContent = await response.text();
+
+      // Create a new window for printing with the HTML content
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        // Fallback if popup is blocked
+        window.print();
+        return;
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      // Wait for content to load, then print
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 500);
+
+    } catch (error) {
+      console.error('Print error:', error);
+      // Fallback to regular print
+      window.print();
+    }
+  };
+
+
+
   if (!isOpen) {
     return null;
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] w-full overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] w-full overflow-y-auto print-content">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
           <div className="flex items-center justify-between">
@@ -105,7 +151,7 @@ export default function ScheduleEForm({
                 Supplemental Income and Loss from Rental Real Estate Activities
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={onClose}>
+            <Button variant="outline" size="sm" onClick={onClose} className="print-hide">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -133,7 +179,7 @@ export default function ScheduleEForm({
                       onClick={() => setActiveProperty(index)}
                       className="text-sm"
                     >
-                      Property {String.fromCharCode(65 + index)}: {prop.property.address.street}
+                      Property {String.fromCharCode(65 + index)}: {prop.property.address.street}{prop.property.address.streetLine2 ? `, ${prop.property.address.streetLine2}` : ''}
                     </Button>
                   ))}
                 </div>
@@ -172,7 +218,7 @@ export default function ScheduleEForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <strong>Address:</strong><br />
-                  {currentProperty.property.address.street}<br />
+                  {currentProperty.property.address.street}{currentProperty.property.address.streetLine2 ? `, ${currentProperty.property.address.streetLine2}` : ''}<br />
                   {currentProperty.property.address.city}, {currentProperty.property.address.state} {currentProperty.property.address.zipCode}
                 </div>
                 <div>
@@ -218,7 +264,7 @@ export default function ScheduleEForm({
                     {properties.map((prop) => (
                       <TableRow key={prop.property.id}>
                         <TableCell className="font-medium">
-                          {prop.property.address.street}, {prop.property.address.city}
+                          {prop.property.address.street}{prop.property.address.streetLine2 ? `, ${prop.property.address.streetLine2}` : ''}, {prop.property.address.city}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatTaxAmount(prop.income.rentalIncome)}
@@ -262,7 +308,7 @@ export default function ScheduleEForm({
           )}
 
           {/* Export Actions */}
-          <Card>
+          <Card className="print-hide">
             <CardHeader>
               <CardTitle>Export Options</CardTitle>
             </CardHeader>
@@ -275,7 +321,7 @@ export default function ScheduleEForm({
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.print()}
+                    onClick={handlePrint}
                     className="flex items-center gap-2"
                   >
                     <Printer className="h-4 w-4" />

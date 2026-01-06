@@ -8,6 +8,13 @@
       "when": 1767629846697,
       "tag": "0000_tense_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1767676515956,
+      "tag": "0001_famous_makkari",
+      "breakpoints": true
     }
   ]
 }
