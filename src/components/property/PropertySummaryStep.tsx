@@ -1,19 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronRight, ChevronLeft, CheckCircle, Home, DollarSign, Building } from "lucide-react";
+import { ChevronRight, ChevronLeft, CheckCircle, Home, DollarSign, Loader2, AlertCircle } from "lucide-react";
 import type { PropertyBasicsData } from "./PropertyBasicsStep";
-import type { MortgageData } from "./MortgageStep";
 
-interface PropertyData extends Partial<PropertyBasicsData>, Partial<MortgageData> {
+interface PropertyData extends Partial<PropertyBasicsData> {
   [key: string]: unknown;
 }
 
 interface PropertySummaryStepProps {
   data: PropertyData;
   onBack: () => void;
-  onSave: () => void;
+  onSave: () => Promise<void>;
 }
 
 export default function PropertySummaryStep({
@@ -21,6 +21,25 @@ export default function PropertySummaryStep({
   onBack,
   onSave,
 }: PropertySummaryStepProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await onSave();
+      // Success handled by wizard redirect
+    } catch (error) {
+      console.error("Property save error:", error);
+      setSubmitError(error instanceof Error ? error.message : "Failed to save property. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const formatCurrency = (amount?: number) => {
     if (!amount) return "$0";
     return new Intl.NumberFormat("en-US", {
@@ -135,42 +154,6 @@ export default function PropertySummaryStep({
           </CardContent>
         </Card>
 
-        {/* Mortgage Information */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Building className="h-5 w-5 text-orange-500" />
-              Financing
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {data.hasMortgage === "yes" ? (
-              <div className="space-y-3">
-                <div>
-                  <span className="text-sm font-medium text-gray-600">Mortgage:</span>
-                  <p className="text-gray-900">Yes, property has a mortgage</p>
-                </div>
-                {data.lenderName && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Lender:</span>
-                    <p className="text-gray-900">{data.lenderName}</p>
-                  </div>
-                )}
-                {data.originalLoanAmount && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Original Loan Amount:</span>
-                    <p className="text-gray-900">{formatCurrency(data.originalLoanAmount)}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                <span className="text-sm font-medium text-gray-600">Mortgage:</span>
-                <p className="text-gray-900">No, property was purchased with cash</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Next Steps Information */}
@@ -185,16 +168,47 @@ export default function PropertySummaryStep({
         </CardContent>
       </Card>
 
+      {/* Error Message */}
+      {submitError && (
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="h-5 w-5" />
+              <p className="font-medium">Error saving property</p>
+            </div>
+            <p className="text-sm text-red-600 mt-1">{submitError}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Navigation */}
       <div className="flex justify-between pt-6">
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          disabled={isSubmitting}
+        >
           <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Financing
+          Back to Property Details
         </Button>
 
-        <Button onClick={onSave} className="bg-green-600 hover:bg-green-700">
-          Save Property & Continue
-          <ChevronRight className="h-4 w-4 ml-2" />
+        <Button
+          onClick={handleSave}
+          disabled={isSubmitting}
+          className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving Property...
+            </>
+          ) : (
+            <>
+              Save Property & Continue
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>
