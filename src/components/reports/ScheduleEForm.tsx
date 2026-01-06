@@ -92,7 +92,7 @@ export default function ScheduleEForm({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] w-full overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] w-full overflow-y-auto print-content">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
           <div className="flex items-center justify-between">
@@ -105,7 +105,7 @@ export default function ScheduleEForm({
                 Supplemental Income and Loss from Rental Real Estate Activities
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={onClose}>
+            <Button variant="outline" size="sm" onClick={onClose} className="print-hide">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -262,7 +262,7 @@ export default function ScheduleEForm({
           )}
 
           {/* Export Actions */}
-          <Card>
+          <Card className="print-hide">
             <CardHeader>
               <CardTitle>Export Options</CardTitle>
             </CardHeader>

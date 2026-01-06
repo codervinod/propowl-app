@@ -123,3 +123,150 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print-specific styles for Schedule E forms */
+@media print {
+  /* Hide interactive elements that shouldn't appear in print */
+  .print-hide,
+  button,
+  nav,
+  .fixed,
+  [role="dialog"],
+  .cursor-pointer,
+  .hover\:bg-gray-700,
+  .bg-black.bg-opacity-50 {
+    display: none !important;
+  }
+
+  /* Ensure Schedule E content displays properly */
+  .print-content {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* Remove modal/dialog overlay styling for print */
+  .max-w-6xl.max-h-\[90vh\].w-full.overflow-y-auto {
+    max-width: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+  }
+
+  /* Remove modal background */
+  .bg-white.rounded-lg {
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure sticky header displays in print */
+  .sticky.top-0 {
+    position: static !important;
+    background: white !important;
+    border-bottom: 1px solid #000 !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* Fix table styling for print */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 12px !important;
+    page-break-inside: auto !important;
+  }
+
+  th, td {
+    border: 1px solid #000 !important;
+    padding: 8px !important;
+    text-align: left !important;
+  }
+
+  th {
+    background-color: #f5f5f5 !important;
+    font-weight: bold !important;
+  }
+
+  /* Property information styling */
+  .grid.grid-cols-1.md\:grid-cols-2 {
+    display: block !important;
+  }
+
+  .grid.grid-cols-1.md\:grid-cols-2 > div {
+    display: block !important;
+    margin-bottom: 15px !important;
+  }
+
+  /* Card styling for print */
+  .border.bg-card {
+    border: 2px solid #000 !important;
+    background: white !important;
+    margin-bottom: 20px !important;
+    padding: 15px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Header text styling */
+  h1, h2, h3, h4, h5, h6 {
+    color: #000 !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Important disclaimer box */
+  .bg-blue-50.border.border-blue-200 {
+    border: 2px solid #000 !important;
+    background: #f0f0f0 !important;
+    padding: 15px !important;
+    margin-top: 20px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Schedule E table specific styling */
+  .scheduleETable {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 20px 0 !important;
+  }
+
+  /* Force black text for all content */
+  * {
+    color: #000 !important;
+    background-color: transparent !important;
+  }
+
+  /* White background for main content areas */
+  .bg-white,
+  .bg-card,
+  body {
+    background: white !important;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-before: always !important;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure proper spacing */
+  .space-y-6 > * + * {
+    margin-top: 24px !important;
+  }
+
+  .space-y-4 > * + * {
+    margin-top: 16px !important;
+  }
+
+  /* Fix icon display in print */
+  svg {
+    width: 16px !important;
+    height: 16px !important;
+    display: inline !important;
+  }
+}
