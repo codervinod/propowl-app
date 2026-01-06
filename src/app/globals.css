@@ -191,6 +191,20 @@
     font-weight: bold !important;
   }
 
+  /* Fix ScheduleE table specific issues */
+  .max-h-80 {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .overflow-y-auto {
+    overflow: visible !important;
+  }
+
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+
   /* Property information styling */
   .grid.grid-cols-1.md\:grid-cols-2 {
     display: block !important;
@@ -199,6 +213,84 @@
   .grid.grid-cols-1.md\:grid-cols-2 > div {
     display: block !important;
     margin-bottom: 15px !important;
+  }
+
+  /* Schedule E Table Container */
+  .border.rounded-lg.overflow-hidden {
+    border: 2px solid #000 !important;
+    border-radius: 0 !important;
+    display: table !important;
+    width: 100% !important;
+    margin: 20px 0 !important;
+  }
+
+  /* Header row styling */
+  .bg-gray-50.border-b-2 {
+    display: table-header-group !important;
+    background-color: #f9fafb !important;
+    border-bottom: 2px solid #000 !important;
+  }
+
+  /* Content area styling */
+  .max-h-80.overflow-y-auto {
+    display: table-row-group !important;
+  }
+
+  .divide-y.divide-gray-200 {
+    display: table-row-group !important;
+  }
+
+  /* Schedule E Table Grid Layout Fix */
+  .grid.grid-cols-12 {
+    display: table-row !important;
+    width: 100% !important;
+  }
+
+  .grid.grid-cols-12 > div {
+    display: table-cell !important;
+    border: 1px solid #000 !important;
+    padding: 8px !important;
+    vertical-align: middle !important;
+  }
+
+  /* Column widths for Schedule E table */
+  .grid.grid-cols-12 > .col-span-1 {
+    width: 8% !important;
+    font-weight: bold !important;
+    text-align: center !important;
+  }
+
+  .grid.grid-cols-12 > .col-span-8 {
+    width: 70% !important;
+    text-align: left !important;
+  }
+
+  .grid.grid-cols-12 > .col-span-3 {
+    width: 22% !important;
+    text-align: right !important;
+    font-family: monospace !important;
+  }
+
+  /* Schedule E table container */
+  .divide-y > div {
+    border-bottom: none !important; /* Remove since we have cell borders */
+  }
+
+  /* Background colors for different row types */
+  .bg-green-50 {
+    background-color: #f0f9ff !important; /* Light blue for income */
+  }
+
+  .bg-blue-50 {
+    background-color: #eff6ff !important; /* Blue for depreciation */
+  }
+
+  .bg-red-50 {
+    background-color: #fef2f2 !important; /* Light red for totals */
+  }
+
+  .bg-gray-50 {
+    background-color: #f9fafb !important; /* Gray for headers and loss */
   }
 
   /* Card styling for print */
