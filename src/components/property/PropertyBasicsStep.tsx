@@ -34,6 +34,7 @@ import {
 import AddressTypeahead, { AddressComponents, PropertyDataResult } from "./AddressTypeahead";
 import { MonthPicker } from "@/components/ui/month-picker";
 import { AutoFilledBadge, LoadingFieldIndicator, ErrorMessage } from "@/components/ui/field-status";
+import { DuplicateWarningDialog } from "./DuplicateWarningDialog";
 
 // Simplified validation - only essential fields required, smart defaults for others
 const propertyBasicsSchema = z.object({
@@ -84,6 +85,15 @@ export default function PropertyBasicsStep({
   const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
   const [propertyDataSource, setPropertyDataSource] = useState<string | null>(null);
   const [propertyDataError, setPropertyDataError] = useState<string | null>(null);
+
+  // Duplicate checking state
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateCheckData, setDuplicateCheckData] = useState<{
+    hasDuplicate: boolean;
+    duplicateProperty?: any;
+    potentialShares: any[];
+  }>({ hasDuplicate: false, potentialShares: [] });
+  const [pendingFormData, setPendingFormData] = useState<PropertyBasicsData | null>(null);
 
   const form = useForm<PropertyBasicsData>({
     resolver: zodResolver(propertyBasicsSchema),
@@ -190,9 +200,63 @@ export default function PropertyBasicsStep({
     }
   };
 
-  const onSubmit = (formData: PropertyBasicsData) => {
-    onUpdate(formData);
-    onNext();
+  const checkForDuplicates = async (formData: PropertyBasicsData) => {
+    try {
+      const response = await fetch("/api/properties/check-duplicate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          street: formData.street,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return result;
+      } else {
+        console.error("Duplicate check failed:", response.status);
+        return { hasDuplicate: false, potentialShares: [] };
+      }
+    } catch (error) {
+      console.error("Duplicate check error:", error);
+      return { hasDuplicate: false, potentialShares: [] };
+    }
+  };
+
+  const onSubmit = async (formData: PropertyBasicsData) => {
+    // Check for duplicates
+    const duplicateResult = await checkForDuplicates(formData);
+
+    if (duplicateResult.hasDuplicate || duplicateResult.potentialShares.length > 0) {
+      // Show duplicate warning dialog
+      setDuplicateCheckData(duplicateResult);
+      setPendingFormData(formData);
+      setShowDuplicateDialog(true);
+    } else {
+      // No duplicates, proceed normally
+      onUpdate(formData);
+      onNext();
+    }
+  };
+
+  const handleProceedAnyway = () => {
+    if (pendingFormData) {
+      setShowDuplicateDialog(false);
+      onUpdate(pendingFormData);
+      onNext();
+      setPendingFormData(null);
+    }
+  };
+
+  const handleDuplicateDialogClose = () => {
+    setShowDuplicateDialog(false);
+    setPendingFormData(null);
+    setDuplicateCheckData({ hasDuplicate: false, potentialShares: [] });
   };
 
   return (
@@ -449,12 +513,23 @@ export default function PropertyBasicsStep({
           {/* Next Button */}
           <div className="flex justify-end pt-6">
             <Button type="submit" className="flex items-center gap-2">
-              Continue to Mortgage Information
+              Continue to Review & Save
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </form>
       </Form>
+
+      {/* Duplicate Warning Dialog */}
+      <DuplicateWarningDialog
+        isOpen={showDuplicateDialog}
+        onClose={handleDuplicateDialogClose}
+        onProceedAnyway={handleProceedAnyway}
+        hasDuplicate={duplicateCheckData.hasDuplicate}
+        duplicateProperty={duplicateCheckData.duplicateProperty}
+        potentialShares={duplicateCheckData.potentialShares}
+        address={pendingFormData ? `${pendingFormData.street}, ${pendingFormData.city}, ${pendingFormData.state}` : ""}
+      />
     </TooltipProvider>
   );
 }
