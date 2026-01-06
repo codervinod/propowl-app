@@ -10,6 +10,7 @@ export interface ScheduleEProperty {
   id: string;
   address: {
     street: string;
+    streetLine2?: string | null;
     city: string;
     state: string;
     zipCode: string;

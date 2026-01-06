@@ -28,6 +28,7 @@ interface PropertyDetailClientProps {
   property: {
     id: string;
     street: string;
+    streetLine2?: string | null;
     city: string;
     state: string;
     zipCode: string;
@@ -109,7 +110,7 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
           </div>
           <div className="flex items-center gap-2 text-lg text-gray-600 mb-4">
             <MapPin className="h-5 w-5" />
-            {property.street}, {property.city}, {property.state} {property.zipCode}
+            {property.street}{property.streetLine2 ? `, ${property.streetLine2}` : ''}, {property.city}, {property.state} {property.zipCode}
           </div>
 
           {/* Property Summary Cards */}

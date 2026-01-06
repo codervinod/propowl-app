@@ -133,7 +133,7 @@ export default function ScheduleEForm({
                       onClick={() => setActiveProperty(index)}
                       className="text-sm"
                     >
-                      Property {String.fromCharCode(65 + index)}: {prop.property.address.street}
+                      Property {String.fromCharCode(65 + index)}: {prop.property.address.street}{prop.property.address.streetLine2 ? `, ${prop.property.address.streetLine2}` : ''}
                     </Button>
                   ))}
                 </div>
@@ -172,7 +172,7 @@ export default function ScheduleEForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <strong>Address:</strong><br />
-                  {currentProperty.property.address.street}<br />
+                  {currentProperty.property.address.street}{currentProperty.property.address.streetLine2 ? `, ${currentProperty.property.address.streetLine2}` : ''}<br />
                   {currentProperty.property.address.city}, {currentProperty.property.address.state} {currentProperty.property.address.zipCode}
                 </div>
                 <div>
@@ -218,7 +218,7 @@ export default function ScheduleEForm({
                     {properties.map((prop) => (
                       <TableRow key={prop.property.id}>
                         <TableCell className="font-medium">
-                          {prop.property.address.street}, {prop.property.address.city}
+                          {prop.property.address.street}{prop.property.address.streetLine2 ? `, ${prop.property.address.streetLine2}` : ''}, {prop.property.address.city}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatTaxAmount(prop.income.rentalIncome)}
