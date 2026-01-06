@@ -86,159 +86,50 @@ export default function ScheduleEForm({
     window.open(csvUrl, '_blank');
   };
 
-  const handlePrint = () => {
-    // Simpler approach: hide UI elements and print current page
-    const originalDisplay = document.body.style.display;
+  const handlePrint = async () => {
+    try {
+      // Get the HTML content that's used to generate the PDF
+      let apiUrl = `/api/reports/pdf?taxYear=${taxYear}&format=html`;
 
-    // Hide everything except the Schedule E content
-    document.body.style.display = 'none';
+      if (isMultiProperty) {
+        apiUrl += "&includeAllProperties=true";
+      } else if (propertyId) {
+        apiUrl += `&propertyId=${propertyId}`;
+      }
 
-    // Create a temporary container for print content
-    const printContainer = document.createElement('div');
-    printContainer.innerHTML = generateSimplePrintContent();
-    printContainer.style.display = 'block';
-    printContainer.style.margin = '20px';
-    printContainer.style.fontFamily = 'Arial, sans-serif';
+      // Fetch the HTML content from the PDF API
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch print content');
+      }
 
-    document.body.appendChild(printContainer);
+      const htmlContent = await response.text();
 
-    // Print the page
-    window.print();
+      // Create a new window for printing with the HTML content
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        // Fallback if popup is blocked
+        window.print();
+        return;
+      }
 
-    // Restore original state
-    document.body.removeChild(printContainer);
-    document.body.style.display = originalDisplay;
+      printWindow.document.open();
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      // Wait for content to load, then print
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 500);
+
+    } catch (error) {
+      console.error('Print error:', error);
+      // Fallback to regular print
+      window.print();
+    }
   };
 
-  const generateSimplePrintContent = () => {
-    const address = `${currentProperty.property.address.street}${currentProperty.property.address.streetLine2 ? `, ${currentProperty.property.address.streetLine2}` : ''}, ${currentProperty.property.address.city}, ${currentProperty.property.address.state} ${currentProperty.property.address.zipCode}`;
-
-    return `
-      <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;">
-        <h1>SCHEDULE E (Form 1040)</h1>
-        <h2>Supplemental Income and Loss from Rental Real Estate Activities</h2>
-        <h3>Tax Year ${currentProperty.taxYear}</h3>
-      </div>
-
-      <div style="background-color: #f9f9f9; border: 2px solid #000; padding: 15px; margin-bottom: 20px;">
-        <h3>Property Information</h3>
-        <p><strong>Property A Address:</strong><br/>${address}</p>
-        <p><strong>Property Type:</strong> ${currentProperty.property.propertyType}</p>
-        <p><strong>Purchase Date:</strong> ${new Date(currentProperty.property.purchaseDate).toLocaleDateString()}</p>
-        <p><strong>Purchase Price:</strong> ${formatCurrency(currentProperty.property.purchasePrice)}</p>
-      </div>
-
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-        <thead>
-          <tr style="background-color: #f0f0f0;">
-            <th style="border: 1px solid #000; padding: 8px; width: 8%; text-align: center;">Line</th>
-            <th style="border: 1px solid #000; padding: 8px; width: 70%;">Description</th>
-            <th style="border: 1px solid #000; padding: 8px; width: 22%; text-align: right;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="background-color: #f0f9ff;">
-            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">3</td>
-            <td style="border: 1px solid #000; padding: 8px;">Rents received</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.income.rentalIncome)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">5</td>
-            <td style="border: 1px solid #000; padding: 8px;">Advertising</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.advertising)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">6</td>
-            <td style="border: 1px solid #000; padding: 8px;">Auto and travel</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.autoAndTravel)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">7</td>
-            <td style="border: 1px solid #000; padding: 8px;">Cleaning and maintenance</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.cleaningAndMaintenance)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">8</td>
-            <td style="border: 1px solid #000; padding: 8px;">Commissions</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.commissions)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">9</td>
-            <td style="border: 1px solid #000; padding: 8px;">Insurance</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.insurance)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">10</td>
-            <td style="border: 1px solid #000; padding: 8px;">Legal and other professional fees</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.legal)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">11</td>
-            <td style="border: 1px solid #000; padding: 8px;">Management fees</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.managementFees)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">12</td>
-            <td style="border: 1px solid #000; padding: 8px;">Mortgage interest paid to banks, etc.</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.mortgageInterest)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">13</td>
-            <td style="border: 1px solid #000; padding: 8px;">Other interest</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.otherInterest)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">14</td>
-            <td style="border: 1px solid #000; padding: 8px;">Repairs</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.repairs)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">15</td>
-            <td style="border: 1px solid #000; padding: 8px;">Supplies</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.supplies)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">16</td>
-            <td style="border: 1px solid #000; padding: 8px;">Taxes</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.taxes)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">17</td>
-            <td style="border: 1px solid #000; padding: 8px;">Utilities</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.utilities)}</td>
-          </tr>
-          <tr style="background-color: #eff6ff;">
-            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">18</td>
-            <td style="border: 1px solid #000; padding: 8px; font-weight: bold;">Depreciation expense</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace; font-weight: bold;">${formatTaxAmount(currentProperty.expenses.depreciation)}</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">19</td>
-            <td style="border: 1px solid #000; padding: 8px;">Other</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.expenses.other)}</td>
-          </tr>
-          <tr style="background-color: #fef2f2; font-weight: bold;">
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">20</td>
-            <td style="border: 1px solid #000; padding: 8px;">Total expenses</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${formatTaxAmount(currentProperty.totals.totalExpenses)}</td>
-          </tr>
-          <tr style="background-color: ${currentProperty.totals.netIncome >= 0 ? '#f0f9ff' : '#f9fafb'}; font-weight: bold;">
-            <td style="border: 1px solid #000; padding: 8px; text-align: center;">21</td>
-            <td style="border: 1px solid #000; padding: 8px;">Income or (loss) from rental real estate activities</td>
-            <td style="border: 1px solid #000; padding: 8px; text-align: right; font-family: monospace;">${currentProperty.totals.netIncome < 0
-              ? `(${formatTaxAmount(Math.abs(currentProperty.totals.netIncome))})`
-              : formatTaxAmount(currentProperty.totals.netIncome)
-            }</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div style="margin-top: 30px; text-align: center; font-size: 11px; color: #666; border-top: 1px solid #ccc; padding-top: 10px;">
-        <p><strong>Important:</strong> This Schedule E data is for informational purposes only. Please consult with a qualified tax professional before filing your tax return. Verify all amounts against your source documents.</p>
-        <p>Generated by PropOwl - The wise way to manage rentals</p>
-      </div>
-    `;
-  };
 
 
   if (!isOpen) {
