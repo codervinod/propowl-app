@@ -40,6 +40,7 @@ import { DuplicateWarningDialog } from "./DuplicateWarningDialog";
 const propertyBasicsSchema = z.object({
   // Address (auto-populated from typeahead)
   street: z.string().min(1, "Address is required"),
+  streetLine2: z.string().optional(), // Unit, suite, apartment number
   city: z.string().min(1, "City is required"),
   state: z.string().min(2).max(2),
   zipCode: z.string().min(5),
@@ -111,6 +112,7 @@ export default function PropertyBasicsStep({
     resolver: zodResolver(propertyBasicsSchema),
     defaultValues: {
       street: data.street || "",
+      streetLine2: data.streetLine2 || "",
       city: data.city || "",
       state: data.state || "",
       zipCode: data.zipCode || "",
@@ -221,6 +223,7 @@ export default function PropertyBasicsStep({
         },
         body: JSON.stringify({
           street: formData.street,
+          streetLine2: formData.streetLine2,
           city: formData.city,
           state: formData.state,
           zipCode: formData.zipCode,
@@ -299,23 +302,47 @@ export default function PropertyBasicsStep({
 
               {/* Address Fields (auto-populated, read-only for display) */}
               {addressSelected && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border">
-                  <div>
-                    <Label className="text-sm text-gray-600">Street</Label>
-                    <p className="font-medium">{form.watch("street")}</p>
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-600">Street</Label>
+                      <p className="font-medium">{form.watch("street")}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">City</Label>
+                      <p className="font-medium">{form.watch("city")}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">State</Label>
+                      <p className="font-medium">{form.watch("state")}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">ZIP Code</Label>
+                      <p className="font-medium">{form.watch("zipCode")}</p>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">City</Label>
-                    <p className="font-medium">{form.watch("city")}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">State</Label>
-                    <p className="font-medium">{form.watch("state")}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-600">ZIP Code</Label>
-                    <p className="font-medium">{form.watch("zipCode")}</p>
-                  </div>
+
+                  {/* Unit/Suite Field - editable for condos, apartments */}
+                  <FormField
+                    control={form.control}
+                    name="streetLine2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit/Suite/Apartment (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Unit 2A, Suite 101, Apt 4B"
+                            {...field}
+                            className="max-w-md"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Add unit, suite, or apartment number if applicable
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               )}
             </div>
@@ -540,7 +567,7 @@ export default function PropertyBasicsStep({
         hasDuplicate={duplicateCheckData.hasDuplicate}
         duplicateProperty={duplicateCheckData.duplicateProperty}
         potentialShares={duplicateCheckData.potentialShares}
-        address={pendingFormData ? `${pendingFormData.street}, ${pendingFormData.city}, ${pendingFormData.state}` : ""}
+        address={pendingFormData ? `${pendingFormData.street}${pendingFormData.streetLine2 ? `, ${pendingFormData.streetLine2}` : ''}, ${pendingFormData.city}, ${pendingFormData.state}` : ""}
       />
     </TooltipProvider>
   );
