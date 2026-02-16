@@ -16,6 +16,50 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PropOwl - Smart Rental Property Accounting",
   description: "AI-powered rental property accounting that eliminates manual data entry and generates tax-ready Schedule E reports.",
+  keywords: [
+    "rental property accounting",
+    "Schedule E",
+    "tax reporting",
+    "property management",
+    "real estate",
+    "tax forms",
+    "rental income",
+    "property expenses"
+  ],
+  authors: [{ name: "PropOwl" }],
+  creator: "PropOwl",
+  publisher: "PropOwl",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  // Icons are handled automatically by Next.js app directory
+  // icon.tsx, apple-icon.svg, favicon.ico in /src/app/
+  manifest: '/site.webmanifest',
+  metadataBase: new URL('https://propowl.ai'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://propowl.ai',
+    title: 'PropOwl - Smart Rental Property Accounting',
+    description: 'AI-powered rental property accounting that eliminates manual data entry and generates tax-ready Schedule E reports.',
+    siteName: 'PropOwl',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'PropOwl - Smart Rental Property Accounting',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PropOwl - Smart Rental Property Accounting',
+    description: 'AI-powered rental property accounting that eliminates manual data entry and generates tax-ready Schedule E reports.',
+    images: ['/opengraph-image'],
+    creator: '@propowl',
+  },
 };
 
 export default function RootLayout({

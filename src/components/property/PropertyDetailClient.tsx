@@ -35,6 +35,7 @@ import {
 import TaxYearDataEntry from "@/components/tax-year/TaxYearDataEntry";
 import PropertyEditDialog from "./PropertyEditDialog";
 import PropertyDeleteDialog from "./PropertyDeleteDialog";
+import PropertySwitcher from "./PropertySwitcher";
 
 interface PropertyDetailClientProps {
   property: {
@@ -110,22 +111,38 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-gray-200 relative overflow-visible">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard">
+          <div className="flex justify-between items-center min-h-[60px]">
+            <div className="flex items-center gap-4 lg:gap-6 min-w-0 flex-1">
+              <Link href="/dashboard" className="flex-shrink-0">
                 <Button variant="ghost" size="sm" className="flex items-center gap-2 text-gray-600 hover:text-orange-500">
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Properties
+                  <span className="hidden sm:inline">Back to Properties</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
               </Link>
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">🦉</span>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <span className="text-3xl lg:text-4xl">🦉</span>
                 <div>
-                  <h1 className="text-2xl font-bold text-orange-500">PropOwl</h1>
-                  <p className="text-sm text-gray-600">Property Tax Management</p>
+                  <h1 className="text-xl lg:text-2xl font-bold text-orange-500">PropOwl</h1>
+                  <p className="text-xs lg:text-sm text-gray-600">Property Tax Management</p>
                 </div>
+              </div>
+              {/* Property Switcher */}
+              <div className="hidden lg:block flex-shrink-0 relative z-20">
+                <PropertySwitcher
+                  currentPropertyId={property.id}
+                  currentProperty={{
+                    id: property.id,
+                    street: property.street,
+                    streetLine2: property.streetLine2,
+                    city: property.city,
+                    state: property.state,
+                    zipCode: property.zipCode,
+                    propertyType: property.propertyType,
+                  }}
+                />
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -137,6 +154,24 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
           </div>
         </div>
       </header>
+
+      {/* Mobile Property Switcher */}
+      <div className="sm:hidden bg-white border-b border-gray-200 shadow-sm relative overflow-visible">
+        <div className="max-w-7xl mx-auto px-4 py-3 relative z-20">
+          <PropertySwitcher
+            currentPropertyId={property.id}
+            currentProperty={{
+              id: property.id,
+              street: property.street,
+              streetLine2: property.streetLine2,
+              city: property.city,
+              state: property.state,
+              zipCode: property.zipCode,
+              propertyType: property.propertyType,
+            }}
+          />
+        </div>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Property Header */}
