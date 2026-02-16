@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 interface TaxYearContextType {
   selectedTaxYear: number;
@@ -15,27 +15,27 @@ interface TaxYearProviderProps {
 }
 
 export function TaxYearProvider({ children }: TaxYearProviderProps) {
-  const [isLoading, setIsLoading] = useState(true);
-
   // Default to previous year for tax season workflow
   // Most users work on previous year's tax data
   const currentYear = new Date().getFullYear();
   const defaultTaxYear = currentYear - 1; // e.g., 2025 in 2026
 
-  const [selectedTaxYear, setSelectedTaxYearState] = useState(defaultTaxYear);
-
-  // Load saved tax year from localStorage on mount
-  useEffect(() => {
-    const savedTaxYear = localStorage.getItem("propowl-selected-tax-year");
-    if (savedTaxYear) {
-      const year = parseInt(savedTaxYear, 10);
-      // Validate the year is reasonable (between 2020 and current year + 1)
-      if (year >= 2020 && year <= currentYear + 1) {
-        setSelectedTaxYearState(year);
+  // Initialize with smart default but check localStorage
+  const [selectedTaxYear, setSelectedTaxYearState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTaxYear = localStorage.getItem("propowl-selected-tax-year");
+      if (savedTaxYear) {
+        const year = parseInt(savedTaxYear, 10);
+        // Validate the year is reasonable (between 2020 and current year + 1)
+        if (year >= 2020 && year <= currentYear + 1) {
+          return year;
+        }
       }
     }
-    setIsLoading(false);
-  }, [currentYear]);
+    return defaultTaxYear;
+  });
+
+  const [isLoading] = useState(false);
 
   // Save tax year to localStorage when it changes
   const setSelectedTaxYear = (year: number) => {

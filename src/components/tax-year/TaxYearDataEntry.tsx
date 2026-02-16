@@ -415,7 +415,7 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
   const handleUpdateMandatoryExpenseForm = (category: string, field: string, value: string | number) => {
     setNewMandatoryExpenses(prev => {
       const currentData = prev[category];
-      let updatedData = {
+      const updatedData = {
         ...currentData,
         [field]: value,
       };
