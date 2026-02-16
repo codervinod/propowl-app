@@ -16,22 +16,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Home,
   ArrowLeft,
   MapPin,
   Building,
-  Calendar
+  Calendar,
+  MoreVertical,
+  Edit,
+  Trash2
 } from "lucide-react";
 import TaxYearDataEntry from "@/components/tax-year/TaxYearDataEntry";
+import PropertyEditDialog from "./PropertyEditDialog";
+import PropertyDeleteDialog from "./PropertyDeleteDialog";
 
 interface PropertyDetailClientProps {
   property: {
     id: string;
     street: string;
+    streetLine2?: string | null;
     city: string;
     state: string;
     zipCode: string;
     propertyType: string;
+    purchaseDate: string;
     purchasePrice: string;
     landValue: string;
   };
@@ -45,6 +58,8 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
   const currentYear = new Date().getFullYear();
   const availableYears = Array.from({ length: 7 }, (_, i) => currentYear - 3 + i); // 3 years back, current, 3 years forward
   const [selectedTaxYear, setSelectedTaxYear] = useState(currentYear);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -65,6 +80,16 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
       apartment: "Apartment Building (5+ units)",
     };
     return types[type] || type;
+  };
+
+  const handleEditSuccess = () => {
+    // Refresh the page to show updated data
+    window.location.reload();
+  };
+
+  const handleDeleteSuccess = () => {
+    // Redirect to dashboard after successful deletion
+    window.location.href = "/dashboard";
   };
 
   return (
@@ -101,15 +126,40 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Property Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Building className="h-6 w-6 text-orange-500" />
-            <h2 className="text-3xl font-bold text-gray-800">
-              {getPropertyTypeLabel(property.propertyType)}
-            </h2>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <Building className="h-6 w-6 text-orange-500" />
+              <h2 className="text-3xl font-bold text-gray-800">
+                {getPropertyTypeLabel(property.propertyType)}
+              </h2>
+            </div>
+
+            {/* Actions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Property
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Property
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="flex items-center gap-2 text-lg text-gray-600 mb-4">
             <MapPin className="h-5 w-5" />
-            {property.street}, {property.city}, {property.state} {property.zipCode}
+            {property.street}{property.streetLine2 ? `, ${property.streetLine2}` : ''}, {property.city}, {property.state} {property.zipCode}
           </div>
 
           {/* Property Summary Cards */}
@@ -185,6 +235,22 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
         {/* Tax Year Data Entry Component */}
         <TaxYearDataEntry propertyId={property.id} taxYear={selectedTaxYear} />
       </main>
+
+      {/* Edit Dialog */}
+      <PropertyEditDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        property={property}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Delete Dialog */}
+      <PropertyDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        property={property}
+        onSuccess={handleDeleteSuccess}
+      />
     </div>
   );
 }
