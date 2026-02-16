@@ -33,16 +33,8 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: [
-      { url: '/apple-icon.svg', sizes: '180x180', type: 'image/svg+xml' },
-    ],
-  },
+  // Icons are handled automatically by Next.js app directory
+  // icon.tsx, apple-icon.svg, favicon.ico in /src/app/
   manifest: '/site.webmanifest',
   metadataBase: new URL('https://propowl.ai'),
   openGraph: {
