@@ -20,6 +20,7 @@ interface PropertyData extends Partial<PropertyBasicsData> {
 export default function PropertyWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [propertyData, setPropertyData] = useState<PropertyData>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const updatePropertyData = (stepData: PropertyData) => {
@@ -43,6 +44,10 @@ export default function PropertyWizard() {
   };
 
   const handleSaveProperty = async () => {
+    // Prevent double submission
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       const response = await fetch("/api/properties", {
         method: "POST",
@@ -66,6 +71,8 @@ export default function PropertyWizard() {
     } catch (error) {
       console.error("Error saving property:", error);
       // TODO: Show error message to user
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -85,6 +92,7 @@ export default function PropertyWizard() {
             data={propertyData}
             onBack={prevStep}
             onSave={handleSaveProperty}
+            isSubmitting={isSubmitting}
           />
         );
       default:

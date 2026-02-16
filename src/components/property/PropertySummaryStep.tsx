@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronRight, ChevronLeft, CheckCircle, Home, DollarSign, Building } from "lucide-react";
+import { ChevronRight, ChevronLeft, CheckCircle, Home, DollarSign, Building, Loader2 } from "lucide-react";
 import type { PropertyBasicsData } from "./PropertyBasicsStep";
 import type { MortgageData } from "./MortgageStep";
 
@@ -14,12 +14,14 @@ interface PropertySummaryStepProps {
   data: PropertyData;
   onBack: () => void;
   onSave: () => void;
+  isSubmitting?: boolean;
 }
 
 export default function PropertySummaryStep({
   data,
   onBack,
   onSave,
+  isSubmitting = false,
 }: PropertySummaryStepProps) {
   const formatCurrency = (amount?: number) => {
     if (!amount) return "$0";
@@ -187,14 +189,32 @@ export default function PropertySummaryStep({
 
       {/* Navigation */}
       <div className="flex justify-between pt-6">
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          disabled={isSubmitting}
+        >
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back to Financing
         </Button>
 
-        <Button onClick={onSave} className="bg-green-600 hover:bg-green-700">
-          Save Property & Continue
-          <ChevronRight className="h-4 w-4 ml-2" />
+        <Button
+          onClick={onSave}
+          className="bg-green-600 hover:bg-green-700"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving Property...
+            </>
+          ) : (
+            <>
+              Save Property & Continue
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>
