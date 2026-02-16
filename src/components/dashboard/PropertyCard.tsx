@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePropertyPerformance } from "@/hooks/usePortfolioData";
+import { useTaxYear } from "@/contexts/TaxYearContext";
 
 interface PropertyCardProps {
   property: {
@@ -36,10 +37,10 @@ interface PropertyCardProps {
 export function PropertyCard({
   property
 }: PropertyCardProps) {
-  const currentYear = 2026; // Default to current year based on user preference
+  const { selectedTaxYear, isLoading: taxYearLoading } = useTaxYear();
   const { data: performanceData, isLoading, error } = usePropertyPerformance(
     property.id,
-    currentYear
+    selectedTaxYear
   );
 
   // Utility functions (moved from server component)
@@ -69,7 +70,7 @@ export function PropertyCard({
   };
 
   const getPerformanceDisplay = () => {
-    if (isLoading) {
+    if (isLoading || taxYearLoading) {
       return {
         income: <Loader2 className="h-3 w-3 animate-spin" />,
         netIncome: <Loader2 className="h-3 w-3 animate-spin" />,
@@ -134,7 +135,7 @@ export function PropertyCard({
           {/* Enhanced YTD Performance Section */}
           <div className="border-t pt-3">
             <div className="text-xs font-medium text-gray-700 mb-2">
-              {currentYear} YTD Performance:
+              {selectedTaxYear} YTD Performance:
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>

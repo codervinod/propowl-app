@@ -2,7 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { db, properties, users } from "@/db";
 import { eq, and } from "drizzle-orm";
-import PropertyDetailClient from "@/components/property/PropertyDetailClient";
+import PropertyPageClient from "@/components/property/PropertyPageClient";
 
 interface PropertyPageProps {
   params: Promise<{
@@ -41,7 +41,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   }
 
   return (
-    <PropertyDetailClient
+    <PropertyPageClient
       property={property}
       user={{
         firstName: user.firstName,

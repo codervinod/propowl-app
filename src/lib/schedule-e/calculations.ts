@@ -9,7 +9,6 @@ import {
   ScheduleEIncome,
   ScheduleESummary,
   ScheduleEProperty,
-  SCHEDULE_E_LINE_MAPPING,
 } from "./types";
 import {
   calculateDepreciationForTaxYear,
