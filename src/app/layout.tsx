@@ -44,6 +44,7 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
+  metadataBase: new URL('https://propowl.ai'),
   openGraph: {
     type: 'website',
     locale: 'en_US',

@@ -35,6 +35,7 @@ import {
 import TaxYearDataEntry from "@/components/tax-year/TaxYearDataEntry";
 import PropertyEditDialog from "./PropertyEditDialog";
 import PropertyDeleteDialog from "./PropertyDeleteDialog";
+import PropertySwitcher from "./PropertySwitcher";
 
 interface PropertyDetailClientProps {
   property: {
@@ -113,7 +114,7 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="flex items-center gap-2 text-gray-600 hover:text-orange-500">
                   <ArrowLeft className="h-4 w-4" />
@@ -127,6 +128,21 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
                   <p className="text-sm text-gray-600">Property Tax Management</p>
                 </div>
               </div>
+              {/* Property Switcher */}
+              <div className="hidden sm:block">
+                <PropertySwitcher
+                  currentPropertyId={property.id}
+                  currentProperty={{
+                    id: property.id,
+                    street: property.street,
+                    streetLine2: property.streetLine2,
+                    city: property.city,
+                    state: property.state,
+                    zipCode: property.zipCode,
+                    propertyType: property.propertyType,
+                  }}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-700 font-medium">
@@ -137,6 +153,24 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
           </div>
         </div>
       </header>
+
+      {/* Mobile Property Switcher */}
+      <div className="sm:hidden bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <PropertySwitcher
+            currentPropertyId={property.id}
+            currentProperty={{
+              id: property.id,
+              street: property.street,
+              streetLine2: property.streetLine2,
+              city: property.city,
+              state: property.state,
+              zipCode: property.zipCode,
+              propertyType: property.propertyType,
+            }}
+          />
+        </div>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Property Header */}
