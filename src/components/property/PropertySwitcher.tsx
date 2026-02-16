@@ -79,13 +79,13 @@ export default function PropertySwitcher({ currentPropertyId, currentProperty }:
   // If only one property, don't show the switcher
   if (properties.length <= 1) {
     return (
-      <div className="flex items-center gap-3 px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg">
-        <Building className="h-5 w-5 text-orange-600" />
-        <div className="min-w-0">
+      <div className="flex items-center gap-3 px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg max-w-full">
+        <Building className="h-5 w-5 text-orange-600 flex-shrink-0" />
+        <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-gray-900 truncate">
             {formatPropertyDisplay(currentProperty)}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 truncate">
             {formatPropertySubtext(currentProperty)}
           </div>
         </div>
@@ -94,14 +94,14 @@ export default function PropertySwitcher({ currentPropertyId, currentProperty }:
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 relative z-10">
       <Building className="h-5 w-5 text-orange-600 flex-shrink-0" />
       <Select
         value={currentPropertyId}
         onValueChange={handlePropertyChange}
         disabled={isLoading}
       >
-        <SelectTrigger className="min-w-[280px] h-auto py-2 px-3 bg-orange-50 border-orange-200 hover:bg-orange-100 transition-colors">
+        <SelectTrigger className="min-w-[280px] max-w-[320px] h-auto py-2 px-3 bg-orange-50 border-orange-200 hover:bg-orange-100 transition-colors">
           <SelectValue asChild>
             <div className="flex flex-col items-start text-left">
               <div className="text-sm font-medium text-gray-900 truncate max-w-[240px]">
@@ -113,7 +113,17 @@ export default function PropertySwitcher({ currentPropertyId, currentProperty }:
             </div>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="max-w-[400px]">
+        <SelectContent
+          className="min-w-[320px] max-w-[450px] z-[9999]"
+          side="bottom"
+          align="start"
+          sideOffset={8}
+          alignOffset={0}
+          avoidCollisions={true}
+          collisionPadding={20}
+          sticky="always"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           {properties.map((property) => (
             <SelectItem key={property.id} value={property.id} className="py-3">
               <div className="flex items-start gap-3 w-full">
