@@ -109,7 +109,7 @@ const OTHER_EXPENSE_CATEGORIES = [
   { value: "cleaning_maintenance", label: "Cleaning & Maintenance", scheduleE: "Line 7" },
   { value: "commissions", label: "Commissions", scheduleE: "Line 8" },
   { value: "legal_professional", label: "Legal & Professional", scheduleE: "Line 10" },
-  { value: "management_fees", label: "Management Fees", scheduleE: "Line 11" },
+  { value: "management_fees", label: "Management Fees (HOA, Property Management)", scheduleE: "Line 11" },
   { value: "other_interest", label: "Other Interest", scheduleE: "Line 13" },
   { value: "repairs", label: "Repairs", scheduleE: "Line 14" },
   { value: "supplies", label: "Supplies", scheduleE: "Line 15" },
