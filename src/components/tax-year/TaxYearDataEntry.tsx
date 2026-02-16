@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import ScheduleEForm from "@/components/reports/ScheduleEForm";
 import { ScheduleEData } from "@/lib/schedule-e/types";
+import { getSmartDateDefault, updateDateForFrequencyChange, getDateDefaultExplanation, FrequencyType } from "@/utils/smartDateDefaults";
 
 interface TaxYearDataEntryProps {
   propertyId: string;
@@ -138,7 +139,7 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
     frequency: 'one-time' as 'one-time' | 'monthly' | 'quarterly' | 'annual',
     description: "",
     vendor: "",
-    date: new Date().toISOString().split('T')[0],
+    date: getSmartDateDefault({ frequency: 'one-time', taxYear }),
   });
 
   // State for new mandatory expense forms (one per category)
@@ -154,21 +155,21 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
       frequency: 'annual',
       description: '',
       vendor: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getSmartDateDefault({ frequency: 'annual', taxYear }),
     },
     property_taxes: {
       amount: 0,
       frequency: 'annual',
       description: '',
       vendor: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getSmartDateDefault({ frequency: 'annual', taxYear }),
     },
     insurance: {
       amount: 0,
       frequency: 'annual',
       description: '',
       vendor: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getSmartDateDefault({ frequency: 'annual', taxYear }),
     },
   });
 
@@ -263,6 +264,28 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
     loadTaxYearData();
   }, [propertyId, taxYear]);
 
+  // Update dates when tax year changes
+  useEffect(() => {
+    // Update newExpense date for new tax year
+    setNewExpense(prev => ({
+      ...prev,
+      date: updateDateForFrequencyChange(prev.date, prev.frequency, taxYear)
+    }));
+
+    // Update mandatory expense dates for new tax year
+    setNewMandatoryExpenses(prev => {
+      const updated: typeof prev = {};
+      Object.keys(prev).forEach(category => {
+        const currentData = prev[category];
+        updated[category] = {
+          ...currentData,
+          date: updateDateForFrequencyChange(currentData.date, currentData.frequency, taxYear)
+        };
+      });
+      return updated;
+    });
+  }, [taxYear]);
+
   // Helper functions
   const annualizeAmount = (amount: number, frequency: string) => {
     switch (frequency) {
@@ -341,7 +364,7 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
         frequency: 'one-time',
         description: "",
         vendor: "",
-        date: new Date().toISOString().split('T')[0],
+        date: getSmartDateDefault({ frequency: 'one-time', taxYear }),
       });
     }
   };
@@ -383,19 +406,48 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
           frequency: 'annual',
           description: '',
           vendor: '',
-          date: new Date().toISOString().split('T')[0],
+          date: getSmartDateDefault({ frequency: 'annual', taxYear }),
         }
       }));
     }
   };
 
   const handleUpdateMandatoryExpenseForm = (category: string, field: string, value: string | number) => {
-    setNewMandatoryExpenses(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
+    setNewMandatoryExpenses(prev => {
+      const currentData = prev[category];
+      let updatedData = {
+        ...currentData,
         [field]: value,
+      };
+
+      // If frequency changed, update the date to smart default
+      if (field === 'frequency') {
+        updatedData.date = updateDateForFrequencyChange(
+          currentData.date,
+          value as FrequencyType,
+          taxYear
+        );
       }
+
+      return {
+        ...prev,
+        [category]: updatedData,
+      };
+    });
+  };
+
+  // Handler for expense frequency change with smart date update
+  const handleExpenseFrequencyChange = (frequency: FrequencyType) => {
+    const updatedDate = updateDateForFrequencyChange(
+      newExpense.date,
+      frequency,
+      taxYear
+    );
+
+    setNewExpense(prev => ({
+      ...prev,
+      frequency,
+      date: updatedDate,
     }));
   };
 
@@ -767,6 +819,9 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
                           value={formData.date}
                           onChange={(e) => handleUpdateMandatoryExpenseForm(expenseType.category, 'date', e.target.value)}
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                          {getDateDefaultExplanation(formData.frequency, taxYear)}
+                        </p>
                       </div>
                     </div>
 
@@ -881,7 +936,7 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
 
                   <div>
                     <Label htmlFor="expense-frequency">Frequency</Label>
-                    <Select value={newExpense.frequency} onValueChange={(value: 'one-time' | 'monthly' | 'quarterly' | 'annual') => setNewExpense({...newExpense, frequency: value})}>
+                    <Select value={newExpense.frequency} onValueChange={(value: 'one-time' | 'monthly' | 'quarterly' | 'annual') => handleExpenseFrequencyChange(value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select frequency" />
                       </SelectTrigger>
@@ -902,6 +957,9 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
                       value={newExpense.date}
                       onChange={(e) => setNewExpense({...newExpense, date: e.target.value})}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {getDateDefaultExplanation(newExpense.frequency, taxYear)}
+                    </p>
                   </div>
                 </div>
 

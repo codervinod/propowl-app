@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTaxYear } from "@/contexts/TaxYearContext";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
@@ -55,9 +56,9 @@ interface PropertyDetailClientProps {
 }
 
 export default function PropertyDetailClient({ property, user }: PropertyDetailClientProps) {
+  const { selectedTaxYear, setSelectedTaxYear, isLoading: taxYearLoading } = useTaxYear();
   const currentYear = new Date().getFullYear();
   const availableYears = Array.from({ length: 7 }, (_, i) => currentYear - 3 + i); // 3 years back, current, 3 years forward
-  const [selectedTaxYear, setSelectedTaxYear] = useState(currentYear);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -91,6 +92,20 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
     // Redirect to dashboard after successful deletion
     window.location.href = "/dashboard";
   };
+
+  // Show loading state while tax year context is initializing
+  if (taxYearLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-pulse">
+            <span className="text-6xl">🦉</span>
+          </div>
+          <p className="text-gray-600 mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-blue-50">

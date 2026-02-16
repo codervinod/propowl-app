@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTaxYear } from "@/contexts/TaxYearContext";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -23,17 +24,15 @@ import { usePortfolioData } from "@/hooks/usePortfolioData";
 import ScheduleEForm from "@/components/reports/ScheduleEForm";
 
 interface PortfolioSummaryCardProps {
-  defaultTaxYear: number;
   propertyCount: number;
 }
 
 // PortfolioMetrics interface removed - using data directly from API
 
 export function PortfolioSummaryCard({
-  defaultTaxYear,
   propertyCount // eslint-disable-line @typescript-eslint/no-unused-vars
 }: PortfolioSummaryCardProps) {
-  const [selectedTaxYear, setSelectedTaxYear] = useState(defaultTaxYear);
+  const { selectedTaxYear, setSelectedTaxYear, isLoading: taxYearLoading } = useTaxYear();
   const { data: portfolioData, isLoading, error } = usePortfolioData(selectedTaxYear);
 
   // Schedule E modal state
@@ -84,7 +83,7 @@ export function PortfolioSummaryCard({
     }
   };
 
-  if (isLoading) {
+  if (isLoading || taxYearLoading) {
     return (
       <Card className="border border-blue-200 bg-white">
         <CardContent className="p-6">
