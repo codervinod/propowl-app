@@ -39,7 +39,9 @@ export default async function DashboardPage() {
     <DashboardClient
       user={{
         firstName: user.firstName,
-        emailAddresses: user.emailAddresses
+        emailAddresses: user.emailAddresses.map(email => ({
+          emailAddress: email.emailAddress
+        }))
       }}
       userProperties={userProperties}
     />
