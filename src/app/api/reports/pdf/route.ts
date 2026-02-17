@@ -73,7 +73,12 @@ export async function GET(request: NextRequest) {
     const browser = await puppeteer.launch({
       args: isLocal
         ? ['--no-sandbox', '--disable-setuid-sandbox']
-        : chromium.args,
+        : [
+            ...chromium.args,
+            '--hide-scrollbars',
+            '--disable-web-security',
+            '--font-render-hinting=none'
+          ],
       defaultViewport: { width: 1920, height: 1080 },
       executablePath: isLocal
         ? undefined // Use local Chrome in development
@@ -86,7 +91,7 @@ export async function GET(request: NextRequest) {
       await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
       const pdfBuffer = await page.pdf({
-        format: 'Letter',
+        format: 'letter',
         printBackground: true,
         margin: {
           top: '1in',
