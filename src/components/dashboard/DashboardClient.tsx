@@ -26,6 +26,7 @@ interface DashboardClientProps {
     propertyType: string;
     purchasePrice: string;
     landValue: string;
+    customDepreciation?: string | null;
   }>;
 }
 
