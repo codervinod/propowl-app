@@ -42,7 +42,10 @@ import {
   TrendingUp,
   CreditCard,
   Download,
-  Calculator
+  Calculator,
+  Edit,
+  Check,
+  X
 } from "lucide-react";
 import ScheduleEForm from "@/components/reports/ScheduleEForm";
 import { ScheduleEData } from "@/lib/schedule-e/types";
@@ -182,6 +185,12 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
   const [scheduleEError, setScheduleEError] = useState<string | null>(null);
   const [showScheduleEModal, setShowScheduleEModal] = useState(false);
   const [scheduleEData, setScheduleEData] = useState<ScheduleEData | null>(null);
+
+  // Edit state management
+  const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editIncomeData, setEditIncomeData] = useState<Partial<IncomeEntry>>({});
+  const [editExpenseData, setEditExpenseData] = useState<Partial<ExpenseEntry>>({});
 
   // Load existing data
   useEffect(() => {
@@ -339,6 +348,41 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
     await autoSaveData(updatedIncomeEntries, expenseEntries);
   };
 
+  // Income edit functions
+  const handleEditIncome = (income: IncomeEntry) => {
+    setEditingIncomeId(income.id);
+    setEditIncomeData({ ...income });
+    // Clear any expense editing
+    setEditingExpenseId(null);
+    setEditExpenseData({});
+  };
+
+  const handleSaveIncomeEdit = async () => {
+    if (!editingIncomeId || !editIncomeData.amount || editIncomeData.amount <= 0) return;
+
+    const updatedIncomeEntries = incomeEntries.map(income =>
+      income.id === editingIncomeId
+        ? {
+            ...income,
+            ...editIncomeData,
+            description: editIncomeData.description || (editIncomeData.type === 'rental' ? 'Rental Income' : 'Other Income'),
+          }
+        : income
+    );
+
+    setIncomeEntries(updatedIncomeEntries);
+    await autoSaveData(updatedIncomeEntries, expenseEntries);
+
+    // Clear edit state
+    setEditingIncomeId(null);
+    setEditIncomeData({});
+  };
+
+  const handleCancelIncomeEdit = () => {
+    setEditingIncomeId(null);
+    setEditIncomeData({});
+  };
+
   // Expense functions
   const handleAddExpense = async () => {
     if (newExpense.category && newExpense.amount > 0) {
@@ -375,6 +419,65 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
 
     // Auto-save to database
     await autoSaveData(incomeEntries, updatedExpenseEntries);
+  };
+
+  // Expense edit functions
+  const handleEditExpense = (expense: ExpenseEntry) => {
+    setEditingExpenseId(expense.id);
+    setEditExpenseData({ ...expense });
+    // Clear any income editing
+    setEditingIncomeId(null);
+    setEditIncomeData({});
+  };
+
+  const handleSaveExpenseEdit = async () => {
+    if (!editingExpenseId || !editExpenseData.amount || editExpenseData.amount <= 0) return;
+
+    // For optional expenses, ensure category is selected
+    const currentExpense = expenseEntries.find(e => e.id === editingExpenseId);
+    const isOptionalExpense = currentExpense && !MANDATORY_EXPENSE_TYPES.some(type => type.category === currentExpense.category);
+
+    if (isOptionalExpense && !editExpenseData.category) return;
+
+    const updatedExpenseEntries = expenseEntries.map(expense =>
+      expense.id === editingExpenseId
+        ? {
+            ...expense,
+            ...editExpenseData,
+            // Ensure required fields have defaults
+            description: editExpenseData.description !== undefined ? editExpenseData.description : expense.description,
+            vendor: editExpenseData.vendor !== undefined ? editExpenseData.vendor : expense.vendor,
+            date: editExpenseData.date || expense.date,
+            category: editExpenseData.category || expense.category,
+          }
+        : expense
+    );
+
+    setExpenseEntries(updatedExpenseEntries);
+    await autoSaveData(incomeEntries, updatedExpenseEntries);
+
+    // Clear edit state
+    setEditingExpenseId(null);
+    setEditExpenseData({});
+  };
+
+  const handleCancelExpenseEdit = () => {
+    setEditingExpenseId(null);
+    setEditExpenseData({});
+  };
+
+  const handleExpenseEditFrequencyChange = (frequency: FrequencyType) => {
+    const updatedDate = updateDateForFrequencyChange(
+      editExpenseData.date || new Date().toISOString().split('T')[0],
+      frequency,
+      taxYear
+    );
+
+    setEditExpenseData(prev => ({
+      ...prev,
+      frequency,
+      date: updatedDate,
+    }));
   };
 
   // Mandatory expense functions
@@ -695,23 +798,116 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
                       <TableBody>
                         {incomeEntries.map((income) => (
                           <TableRow key={income.id}>
-                            <TableCell className="capitalize">{income.type}</TableCell>
-                            <TableCell className="font-semibold">{formatCurrency(income.amount)}</TableCell>
-                            <TableCell className="capitalize">{income.frequency}</TableCell>
-                            <TableCell className="font-semibold text-green-600">
-                              {formatCurrency(annualizeAmount(income.amount, income.frequency))}
-                            </TableCell>
-                            <TableCell>{income.description}</TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveIncome(income.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
+                            {editingIncomeId === income.id ? (
+                              // Edit mode - inline form fields
+                              <>
+                                <TableCell>
+                                  <Select
+                                    value={editIncomeData.type || income.type}
+                                    onValueChange={(value: 'rental' | 'other') => setEditIncomeData({...editIncomeData, type: value})}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="rental">Rental</SelectItem>
+                                      <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                    <Input
+                                      type="number"
+                                      className="pl-8 h-8"
+                                      value={editIncomeData.amount || ""}
+                                      onChange={(e) => setEditIncomeData({...editIncomeData, amount: Number(e.target.value) || 0})}
+                                    />
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Select
+                                    value={editIncomeData.frequency || income.frequency}
+                                    onValueChange={(value: 'monthly' | 'quarterly' | 'annual') => setEditIncomeData({...editIncomeData, frequency: value})}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="monthly">Monthly</SelectItem>
+                                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                                      <SelectItem value="annual">Annual</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell className="font-semibold text-green-600">
+                                  {formatCurrency(annualizeAmount(editIncomeData.amount || income.amount, editIncomeData.frequency || income.frequency))}
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    className="h-8"
+                                    value={editIncomeData.description !== undefined ? editIncomeData.description : income.description}
+                                    onChange={(e) => setEditIncomeData({...editIncomeData, description: e.target.value})}
+                                    placeholder="Description"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={handleSaveIncomeEdit}
+                                      className="text-green-600 hover:text-green-800 h-8 w-8 p-0"
+                                      disabled={!editIncomeData.amount || editIncomeData.amount <= 0}
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={handleCancelIncomeEdit}
+                                      className="text-gray-600 hover:text-gray-800 h-8 w-8 p-0"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </>
+                            ) : (
+                              // Display mode - read-only
+                              <>
+                                <TableCell className="capitalize">{income.type}</TableCell>
+                                <TableCell className="font-semibold">{formatCurrency(income.amount)}</TableCell>
+                                <TableCell className="capitalize">{income.frequency}</TableCell>
+                                <TableCell className="font-semibold text-green-600">
+                                  {formatCurrency(annualizeAmount(income.amount, income.frequency))}
+                                </TableCell>
+                                <TableCell>{income.description}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditIncome(income)}
+                                      className="text-blue-600 hover:text-blue-800 h-8 w-8 p-0"
+                                      disabled={editingIncomeId !== null || editingExpenseId !== null}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveIncome(income.id)}
+                                      className="text-red-600 hover:text-red-800 h-8 w-8 p-0"
+                                      disabled={editingIncomeId !== null || editingExpenseId !== null}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </>
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -843,30 +1039,139 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
                       <h4 className="font-semibold mb-3">{expenseType.label} Entries ({existingEntries.length})</h4>
                       <div className="space-y-2">
                         {existingEntries.map((expense) => (
-                          <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-4">
-                                <div className="font-semibold text-lg">{formatCurrency(expense.amount)}</div>
-                                <div className="text-sm text-gray-600 capitalize">{expense.frequency}</div>
-                                <div className="text-sm font-semibold text-red-600">
-                                  {formatCurrency(annualizeAmount(expense.amount, expense.frequency))} annual
+                          <div key={expense.id} className="p-3 border rounded-lg bg-white">
+                            {editingExpenseId === expense.id ? (
+                              // Edit mode - form fields
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  <div>
+                                    <Label>Amount</Label>
+                                    <div className="relative">
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                      <Input
+                                        type="number"
+                                        className="pl-8"
+                                        value={editExpenseData.amount || ""}
+                                        onChange={(e) => setEditExpenseData({...editExpenseData, amount: Number(e.target.value) || 0})}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label>Frequency</Label>
+                                    <Select
+                                      value={editExpenseData.frequency || expense.frequency}
+                                      onValueChange={(value: 'one-time' | 'monthly' | 'quarterly' | 'annual') => handleExpenseEditFrequencyChange(value)}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="one-time">One-time</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                                        <SelectItem value="annual">Annual</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div>
+                                    <Label>Description</Label>
+                                    <Input
+                                      value={editExpenseData.description !== undefined ? editExpenseData.description : expense.description}
+                                      onChange={(e) => setEditExpenseData({...editExpenseData, description: e.target.value})}
+                                      placeholder="Description"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>Vendor/Payee</Label>
+                                    <Input
+                                      value={editExpenseData.vendor !== undefined ? editExpenseData.vendor : expense.vendor}
+                                      onChange={(e) => setEditExpenseData({...editExpenseData, vendor: e.target.value})}
+                                      placeholder="Who was paid?"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Date</Label>
+                                    <Input
+                                      type="date"
+                                      value={editExpenseData.date || expense.date}
+                                      onChange={(e) => setEditExpenseData({...editExpenseData, date: e.target.value})}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {getDateDefaultExplanation(editExpenseData.frequency || expense.frequency, taxYear)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <div className="text-sm font-semibold text-red-600">
+                                    Annual: {formatCurrency(annualizeAmount(editExpenseData.amount || expense.amount, editExpenseData.frequency || expense.frequency))}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={handleSaveExpenseEdit}
+                                      size="sm"
+                                      disabled={!editExpenseData.amount || editExpenseData.amount <= 0}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                      Save
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={handleCancelExpenseEdit}
+                                      size="sm"
+                                      className="flex items-center gap-1"
+                                    >
+                                      <X className="h-4 w-4" />
+                                      Cancel
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                              {expense.description && (
-                                <div className="text-sm text-gray-500 mt-1">{expense.description}</div>
-                              )}
-                              {expense.vendor && (
-                                <div className="text-xs text-gray-400">Paid to: {expense.vendor}</div>
-                              )}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveExpense(expense.id)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            ) : (
+                              // Display mode - read-only
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-4">
+                                    <div className="font-semibold text-lg">{formatCurrency(expense.amount)}</div>
+                                    <div className="text-sm text-gray-600 capitalize">{expense.frequency}</div>
+                                    <div className="text-sm font-semibold text-red-600">
+                                      {formatCurrency(annualizeAmount(expense.amount, expense.frequency))} annual
+                                    </div>
+                                  </div>
+                                  {expense.description && (
+                                    <div className="text-sm text-gray-500 mt-1">{expense.description}</div>
+                                  )}
+                                  {expense.vendor && (
+                                    <div className="text-xs text-gray-400">Paid to: {expense.vendor}</div>
+                                  )}
+                                  {expense.date && (
+                                    <div className="text-xs text-gray-400">Date: {expense.date}</div>
+                                  )}
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditExpense(expense)}
+                                    className="text-blue-600 hover:text-blue-800"
+                                    disabled={editingIncomeId !== null || editingExpenseId !== null}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveExpense(expense.id)}
+                                    className="text-red-500 hover:text-red-700"
+                                    disabled={editingIncomeId !== null || editingExpenseId !== null}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1005,36 +1310,182 @@ export default function TaxYearDataEntry({ propertyId, taxYear }: TaxYearDataEnt
                           <TableHead>Frequency</TableHead>
                           <TableHead>Annual Total</TableHead>
                           <TableHead>Description</TableHead>
-                          <TableHead className="w-[100px]">Actions</TableHead>
+                          <TableHead className="w-[120px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {optionalExpenseEntries.map((expense) => {
                           const category = OPTIONAL_EXPENSE_CATEGORIES.find(cat => cat.value === expense.category);
+                          const editCategory = OPTIONAL_EXPENSE_CATEGORIES.find(cat => cat.value === (editExpenseData.category || expense.category));
+
                           return (
                             <TableRow key={expense.id}>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{category?.label}</div>
-                                  <div className="text-xs text-gray-500">{category?.scheduleE}</div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-semibold">{formatCurrency(expense.amount)}</TableCell>
-                              <TableCell className="capitalize">{expense.frequency}</TableCell>
-                              <TableCell className="font-semibold text-red-600">
-                                {formatCurrency(annualizeAmount(expense.amount, expense.frequency))}
-                              </TableCell>
-                              <TableCell>{expense.description}</TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRemoveExpense(expense.id)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
+                              {editingExpenseId === expense.id ? (
+                                // Edit mode - expanded form
+                                <TableCell colSpan={6} className="p-0">
+                                  <div className="p-4 bg-gray-50 border-t border-b">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                      <div>
+                                        <Label className="text-xs">Category</Label>
+                                        <Select
+                                          value={editExpenseData.category || expense.category}
+                                          onValueChange={(value) => setEditExpenseData({...editExpenseData, category: value})}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {OPTIONAL_EXPENSE_CATEGORIES.map((cat) => (
+                                              <SelectItem key={cat.value} value={cat.value}>
+                                                {cat.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <div className="text-xs text-gray-500 mt-1">{editCategory?.scheduleE}</div>
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Amount</Label>
+                                        <div className="relative">
+                                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                          <Input
+                                            type="number"
+                                            className="pl-8 h-8"
+                                            value={editExpenseData.amount || ""}
+                                            onChange={(e) => setEditExpenseData({...editExpenseData, amount: Number(e.target.value) || 0})}
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Frequency</Label>
+                                        <Select
+                                          value={editExpenseData.frequency || expense.frequency}
+                                          onValueChange={(value: 'one-time' | 'monthly' | 'quarterly' | 'annual') => handleExpenseEditFrequencyChange(value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="one-time">One-time</SelectItem>
+                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                            <SelectItem value="quarterly">Quarterly</SelectItem>
+                                            <SelectItem value="annual">Annual</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Description</Label>
+                                        <Input
+                                          className="h-8"
+                                          value={editExpenseData.description !== undefined ? editExpenseData.description : expense.description}
+                                          onChange={(e) => setEditExpenseData({...editExpenseData, description: e.target.value})}
+                                          placeholder="Description"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Vendor/Payee</Label>
+                                        <Input
+                                          className="h-8"
+                                          value={editExpenseData.vendor !== undefined ? editExpenseData.vendor : expense.vendor}
+                                          onChange={(e) => setEditExpenseData({...editExpenseData, vendor: e.target.value})}
+                                          placeholder="Who was paid?"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Date</Label>
+                                        <Input
+                                          type="date"
+                                          className="h-8"
+                                          value={editExpenseData.date || expense.date}
+                                          onChange={(e) => setEditExpenseData({...editExpenseData, date: e.target.value})}
+                                        />
+                                        <div className="text-xs text-gray-500 mt-1">
+                                          {getDateDefaultExplanation(editExpenseData.frequency || expense.frequency, taxYear)}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center mt-4">
+                                      <div className="text-sm font-semibold text-red-600">
+                                        Annual Total: {formatCurrency(annualizeAmount(editExpenseData.amount || expense.amount, editExpenseData.frequency || expense.frequency))}
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button
+                                          onClick={handleSaveExpenseEdit}
+                                          size="sm"
+                                          disabled={!editExpenseData.amount || editExpenseData.amount <= 0 || !(editExpenseData.category || expense.category)}
+                                          className="flex items-center gap-1"
+                                        >
+                                          <Check className="h-4 w-4" />
+                                          Save
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          onClick={handleCancelExpenseEdit}
+                                          size="sm"
+                                          className="flex items-center gap-1"
+                                        >
+                                          <X className="h-4 w-4" />
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              ) : (
+                                // Display mode - read-only
+                                <>
+                                  <TableCell>
+                                    <div>
+                                      <div className="font-medium">{category?.label}</div>
+                                      <div className="text-xs text-gray-500">{category?.scheduleE}</div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-semibold">{formatCurrency(expense.amount)}</TableCell>
+                                  <TableCell className="capitalize">{expense.frequency}</TableCell>
+                                  <TableCell className="font-semibold text-red-600">
+                                    {formatCurrency(annualizeAmount(expense.amount, expense.frequency))}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div>
+                                      <div>{expense.description}</div>
+                                      {expense.vendor && (
+                                        <div className="text-xs text-gray-500">Vendor: {expense.vendor}</div>
+                                      )}
+                                      {expense.date && (
+                                        <div className="text-xs text-gray-500">Date: {expense.date}</div>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEditExpense(expense)}
+                                        className="text-blue-600 hover:text-blue-800 h-8 w-8 p-0"
+                                        disabled={editingIncomeId !== null || editingExpenseId !== null}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveExpense(expense.id)}
+                                        className="text-red-600 hover:text-red-800 h-8 w-8 p-0"
+                                        disabled={editingIncomeId !== null || editingExpenseId !== null}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </>
+                              )}
                             </TableRow>
                           );
                         })}
