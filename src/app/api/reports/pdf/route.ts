@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import {
   generateReportFilename,
   scheduleEToHTML,
@@ -66,10 +67,18 @@ export async function GET(request: NextRequest) {
       htmlContent = scheduleEToHTML(data);
     }
 
-    // Generate PDF using Puppeteer
+    // Generate PDF using Puppeteer with serverless Chrome
+    const isLocal = process.env.NODE_ENV === 'development';
+
     const browser = await puppeteer.launch({
+      args: isLocal
+        ? ['--no-sandbox', '--disable-setuid-sandbox']
+        : chromium.args,
+      defaultViewport: { width: 1920, height: 1080 },
+      executablePath: isLocal
+        ? undefined // Use local Chrome in development
+        : await chromium.executablePath(),
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     try {
