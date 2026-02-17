@@ -80,6 +80,7 @@ export const properties = pgTable("properties", {
   purchaseDate: date("purchase_date").notNull(),
   purchasePrice: decimal("purchase_price", { precision: 12, scale: 2 }).notNull(),
   landValue: decimal("land_value", { precision: 12, scale: 2 }).notNull(),
+  customDepreciation: decimal("custom_depreciation", { precision: 10, scale: 2 }),
 
   // Management
   managementType: managementTypeEnum("management_type").notNull(),
