@@ -21,6 +21,7 @@ export default async function DashboardPage() {
     propertyType: string;
     purchasePrice: string;
     landValue: string;
+    customDepreciation?: string | null;
   }> = [];
   try {
     const results = await db

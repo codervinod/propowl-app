@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { usePropertyPerformance } from "@/hooks/usePortfolioData";
 import { useTaxYear } from "@/contexts/TaxYearContext";
+import { calculateImpliedLandValue } from "@/lib/schedule-e/calculations";
 
 interface PropertyCardProps {
   property: {
@@ -31,6 +32,7 @@ interface PropertyCardProps {
     propertyType: string;
     purchasePrice: string;
     landValue: string;
+    customDepreciation?: string | null;
   };
 }
 
@@ -127,8 +129,19 @@ export function PropertyCard({
               <p className="font-semibold">{formatCurrency(property.purchasePrice)}</p>
             </div>
             <div>
-              <span className="text-gray-500">Land Value</span>
-              <p className="font-semibold">{formatCurrency(property.landValue)}</p>
+              <span className="text-gray-500">
+                Land Value {property.customDepreciation && "(CPA Implied)"}
+              </span>
+              <p className="font-semibold">
+                {formatCurrency(
+                  property.customDepreciation
+                    ? calculateImpliedLandValue(
+                        parseFloat(property.purchasePrice),
+                        parseFloat(property.customDepreciation)
+                      )
+                    : parseFloat(property.landValue)
+                )}
+              </p>
             </div>
           </div>
 
