@@ -157,6 +157,30 @@ export function calculateDepreciation(
 }
 
 /**
+ * Calculate CPA-implied land value from custom depreciation
+ * When CPA provides annual depreciation, reverse-calculate their implied land value
+ */
+export function calculateImpliedLandValue(
+  purchasePrice: number,
+  customDepreciation: number
+): number {
+  const depreciableBasis = customDepreciation * 27.5;
+  return purchasePrice - depreciableBasis;
+}
+
+/**
+ * Get effective land value - uses CPA implied value when custom depreciation is provided
+ */
+export function getEffectiveLandValue(
+  property: ScheduleEProperty
+): number {
+  if (property.customDepreciation !== undefined && property.customDepreciation !== null) {
+    return calculateImpliedLandValue(property.purchasePrice, property.customDepreciation);
+  }
+  return property.landValue;
+}
+
+/**
  * Calculate total expenses (Schedule E Line 20)
  */
 export function calculateTotalExpenses(expenses: ScheduleEExpenses): number {
