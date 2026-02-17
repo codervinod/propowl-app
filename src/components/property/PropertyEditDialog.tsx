@@ -447,7 +447,7 @@ export default function PropertyEditDialog({
                         </span>
                       </FormLabel>
                       <FormDescription className="text-sm text-gray-600">
-                        Enter your CPA's depreciation amount to override the calculated value. Leave blank to use calculated depreciation.
+                        Enter your CPA&apos;s depreciation amount to override the calculated value. Leave blank to use calculated depreciation.
                       </FormDescription>
                       <FormControl>
                         <div className="relative">
