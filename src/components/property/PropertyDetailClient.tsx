@@ -36,6 +36,7 @@ import TaxYearDataEntry from "@/components/tax-year/TaxYearDataEntry";
 import PropertyEditDialog from "./PropertyEditDialog";
 import PropertyDeleteDialog from "./PropertyDeleteDialog";
 import PropertySwitcher from "./PropertySwitcher";
+import { calculateImpliedLandValue } from "@/lib/schedule-e/calculations";
 
 interface PropertyDetailClientProps {
   property: {
@@ -233,9 +234,18 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-gray-600">Land Value</p>
+                    <p className="text-sm text-gray-600">
+                      Land Value {property.customDepreciation && "(CPA Implied)"}
+                    </p>
                     <p className="text-xl font-bold text-gray-800">
-                      {formatCurrency(property.landValue)}
+                      {formatCurrency(
+                        property.customDepreciation
+                          ? calculateImpliedLandValue(
+                              parseFloat(property.purchasePrice),
+                              parseFloat(property.customDepreciation)
+                            )
+                          : parseFloat(property.landValue)
+                      )}
                     </p>
                   </div>
                   <Building className="h-8 w-8 text-green-500" />

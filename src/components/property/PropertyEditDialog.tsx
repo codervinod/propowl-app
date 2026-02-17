@@ -80,7 +80,7 @@ interface Property {
   purchaseDate: string;
   purchasePrice: string;
   landValue: string;
-  customDepreciation?: string;
+  customDepreciation?: string | null;
 }
 
 interface PropertyEditDialogProps {
