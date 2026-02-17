@@ -18,6 +18,7 @@ export interface ScheduleEProperty {
   purchaseDate: string;
   purchasePrice: number;
   landValue: number;
+  customDepreciation?: number; // Annual depreciation override
 }
 
 /**

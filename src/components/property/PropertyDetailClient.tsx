@@ -113,8 +113,8 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 relative overflow-visible">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center min-h-[60px]">
-            <div className="flex items-center gap-4 lg:gap-6 min-w-0 flex-1">
+          <div className="flex justify-between items-center min-h-[60px] relative">
+            <div className="flex items-center gap-4 lg:gap-6 min-w-0 flex-1 overflow-visible">
               <Link href="/dashboard" className="flex-shrink-0">
                 <Button variant="ghost" size="sm" className="flex items-center gap-2 text-gray-600 hover:text-orange-500">
                   <ArrowLeft className="h-4 w-4" />
@@ -130,7 +130,7 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
                 </div>
               </div>
               {/* Property Switcher */}
-              <div className="hidden lg:block flex-shrink-0 relative z-20">
+              <div className="hidden lg:block min-w-0 flex-1 relative z-20 max-w-[400px]">
                 <PropertySwitcher
                   currentPropertyId={property.id}
                   currentProperty={{

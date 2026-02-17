@@ -94,33 +94,33 @@ export default function PropertySwitcher({ currentPropertyId, currentProperty }:
   }
 
   return (
-    <div className="flex items-center gap-2 relative z-10">
+    <div className="flex items-center gap-2 relative z-10 w-full">
       <Building className="h-5 w-5 text-orange-600 flex-shrink-0" />
       <Select
         value={currentPropertyId}
         onValueChange={handlePropertyChange}
         disabled={isLoading}
       >
-        <SelectTrigger className="min-w-[280px] max-w-[320px] h-auto py-2 px-3 bg-orange-50 border-orange-200 hover:bg-orange-100 transition-colors">
+        <SelectTrigger className="w-full min-w-[280px] max-w-[400px] h-auto py-2 px-3 bg-orange-50 border-orange-200 hover:bg-orange-100 transition-colors">
           <SelectValue asChild>
-            <div className="flex flex-col items-start text-left">
-              <div className="text-sm font-medium text-gray-900 truncate max-w-[240px]">
+            <div className="flex flex-col items-start text-left min-w-0 w-full">
+              <div className="text-sm font-medium text-gray-900 truncate w-full">
                 {formatPropertyDisplay(currentProperty)}
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 truncate w-full">
                 {formatPropertySubtext(currentProperty)}
               </div>
             </div>
           </SelectValue>
         </SelectTrigger>
         <SelectContent
-          className="min-w-[320px] max-w-[450px] z-[9999]"
+          className="min-w-[320px] max-w-[500px] z-[9999] max-h-[300px] overflow-y-auto"
           side="bottom"
           align="start"
           sideOffset={8}
-          alignOffset={0}
+          alignOffset={-10}
           avoidCollisions={true}
-          collisionPadding={20}
+          collisionPadding={30}
           sticky="always"
           onCloseAutoFocus={(e) => e.preventDefault()}
         >

@@ -64,6 +64,7 @@ const propertyEditSchema = z.object({
   purchaseDate: z.string().min(1, "Purchase date is required"),
   purchasePrice: z.number().min(1, "Purchase price must be positive"),
   landValue: z.number().min(0, "Land value must be non-negative"),
+  customDepreciation: z.number().min(0, "Custom depreciation must be positive").optional(),
 });
 
 export type PropertyEditData = z.infer<typeof propertyEditSchema>;
@@ -79,6 +80,7 @@ interface Property {
   purchaseDate: string;
   purchasePrice: string;
   landValue: string;
+  customDepreciation?: string;
 }
 
 interface PropertyEditDialogProps {
@@ -119,6 +121,7 @@ export default function PropertyEditDialog({
       purchaseDate: property.purchaseDate.slice(0, 7), // Convert YYYY-MM-DD to YYYY-MM
       purchasePrice: parseFloat(property.purchasePrice),
       landValue: parseFloat(property.landValue),
+      customDepreciation: property.customDepreciation ? parseFloat(property.customDepreciation) : undefined,
     },
   });
 
@@ -180,6 +183,7 @@ export default function PropertyEditDialog({
           purchaseDate: formData.purchaseDate,
           purchasePrice: formData.purchasePrice,
           landValue: formData.landValue,
+          customDepreciation: formData.customDepreciation,
         }),
       });
 
@@ -423,7 +427,44 @@ export default function PropertyEditDialog({
                       {purchasePrice > 0 && field.value > 0 && (
                         <FormDescription>
                           Depreciable basis: ${(purchasePrice - field.value).toLocaleString()}
-                          (Annual depreciation: ${Math.round((purchasePrice - field.value) / 27.5).toLocaleString()})
+                          (Calculated annual depreciation: ${Math.round((purchasePrice - field.value) / 27.5).toLocaleString()})
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customDepreciation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Custom Annual Depreciation (Optional)
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Override
+                        </span>
+                      </FormLabel>
+                      <FormDescription className="text-sm text-gray-600">
+                        Enter your CPA&apos;s depreciation amount to override the calculated value. Leave blank to use calculated depreciation.
+                      </FormDescription>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                          <Input
+                            type="number"
+                            className="pl-8"
+                            placeholder="5,855"
+                            {...field}
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          />
+                        </div>
+                      </FormControl>
+                      {field.value && field.value > 0 && (
+                        <FormDescription className="text-blue-600">
+                          ✓ Using custom depreciation: ${field.value.toLocaleString()} annually
                         </FormDescription>
                       )}
                       <FormMessage />

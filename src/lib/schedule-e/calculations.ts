@@ -142,6 +142,12 @@ export function calculateDepreciation(
   property: ScheduleEProperty,
   taxYear: number
 ): number {
+  // Use custom depreciation if provided
+  if (property.customDepreciation !== undefined && property.customDepreciation !== null) {
+    return property.customDepreciation;
+  }
+
+  // Otherwise use calculated depreciation
   return calculateDepreciationForTaxYear(
     property.purchasePrice,
     property.landValue,

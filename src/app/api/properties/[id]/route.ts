@@ -18,6 +18,7 @@ const updatePropertySchema = z.object({
   purchaseDate: z.string().min(1, "Purchase date is required").optional(),
   purchasePrice: z.number().min(1, "Purchase price must be positive").optional(),
   landValue: z.number().min(0, "Land value must be non-negative").optional(),
+  customDepreciation: z.number().min(0, "Custom depreciation must be positive").optional().nullable(),
 });
 
 // Helper function to verify user owns the property
@@ -94,6 +95,9 @@ export async function PUT(
     }
     if (updateData.landValue !== undefined) {
       dbUpdateData.landValue = updateData.landValue.toString();
+    }
+    if (updateData.customDepreciation !== undefined) {
+      dbUpdateData.customDepreciation = updateData.customDepreciation?.toString();
     }
 
     // Update the property
