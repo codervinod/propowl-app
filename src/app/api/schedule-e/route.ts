@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
           purchaseDate: property.purchaseDate,
           purchasePrice: parseFloat(property.purchasePrice),
           landValue: parseFloat(property.landValue),
+          customDepreciation: property.customDepreciation ? parseFloat(property.customDepreciation) : undefined,
         };
 
         // Transform income entries
