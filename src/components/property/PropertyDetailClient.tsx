@@ -49,6 +49,7 @@ interface PropertyDetailClientProps {
     purchaseDate: string;
     purchasePrice: string;
     landValue: string;
+    customDepreciation?: string | null;
   };
   user: {
     firstName?: string | null;
@@ -249,7 +250,9 @@ export default function PropertyDetailClient({ property, user }: PropertyDetailC
                     <p className="text-sm text-gray-600">Annual Depreciation</p>
                     <p className="text-xl font-bold text-gray-800">
                       {formatCurrency(
-                        Math.round((parseFloat(property.purchasePrice) - parseFloat(property.landValue)) / 27.5)
+                        property.customDepreciation
+                          ? parseFloat(property.customDepreciation)
+                          : Math.round((parseFloat(property.purchasePrice) - parseFloat(property.landValue)) / 27.5)
                       )}
                     </p>
                   </div>
